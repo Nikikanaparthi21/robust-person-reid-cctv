@@ -1,0 +1,21 @@
+project: robust-person-reid-cctv
+seed: 255
+data:
+  dataset: choose_mars_or_dukemtmc_videoreid
+  split: fixed_and_documented
+  sampling_fps: 3
+  image_size: [256, 128]
+models:
+  detector: documented_pretrained_person_detector
+  tracker: bytetrack
+  encoder: documented_pretrained_reid_encoder
+representation:
+  frame_embedding: true
+  tracklet_pooling: mean
+clustering:
+  algorithms: [dbscan, agglomerative]
+  metric: cosine
+evaluation:
+  metrics: [rank1, rank5, map, pairwise_precision, pairwise_recall, f1, purity, ari, runtime]
+privacy:
+  raw_cctv_in_repository: false
