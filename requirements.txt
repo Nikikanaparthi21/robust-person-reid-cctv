@@ -1,0 +1,12 @@
+# Core research dependencies; pin exact versions after the team selects the runtime.
+numpy
+opencv-python
+pandas
+scikit-learn
+torch
+torchvision
+pyyaml
+tqdm
+matplotlib
+
+# Select and document detector, tracker, and ReID packages during Week 1.
