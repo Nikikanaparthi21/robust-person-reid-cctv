@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+
+# Private media and data
+/data/raw/
+/data/private/
+*.mp4
+*.mov
+*.avi
+*.mkv
+*.jpg
+*.jpeg
+*.png
+
+# Model artifacts and generated outputs
+*.pt
+*.pth
+*.onnx
+outputs/
+checkpoints/
+results/generated/
+
+# Notebook and OS files
+.ipynb_checkpoints/
+.DS_Store
