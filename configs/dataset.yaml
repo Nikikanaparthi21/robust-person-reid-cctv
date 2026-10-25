@@ -1,0 +1,19 @@
+dataset_name: MARS
+
+# Replace this with the actual local path where MARS is stored.
+dataset_root: /path/to/local/MARS
+
+train_directory: bbox_train
+test_directory: bbox_test
+
+selected_split: test
+
+# Complete these after the team confirms the subset.
+selected_identities: []
+selected_tracklets: []
+
+processed_root: data/processed
+tracklet_root: data/tracklets
+embedding_root: data/embeddings
+
+random_seed: 255

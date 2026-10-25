@@ -1,7 +1,7 @@
 project: robust-person-reid-cctv
 seed: 255
 data:
-  dataset: choose_mars_or_dukemtmc_videoreid
+  dataset: mars
   split: fixed_and_documented
   sampling_fps: 3
   image_size: [256, 128]
