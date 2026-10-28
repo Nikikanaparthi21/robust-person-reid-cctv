@@ -1,12 +1,16 @@
 # Core research dependencies; pin exact versions after the team selects the runtime.
 numpy
-opencv-python
+scipy
 pandas
+tabulate
 scikit-learn
-torch
-torchvision
 pyyaml
+pytest
 tqdm
 matplotlib
+pillow
 
-# Select and document detector, tracker, and ReID packages during Week 1.
+# Needed only for real embedding extraction (scripts/extract_embeddings.py); not used in tests.
+# torch
+# torchvision
+# torchreid
