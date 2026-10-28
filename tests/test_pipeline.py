@@ -218,3 +218,12 @@ def test_select_frames_subset_rules():
     assert all(len(v) <= 8 for v in per_track.values())
     assert all(v[0] == 1 and v[-1] == 30 for v in per_track.values() if len(v) == 8)  # even spread keeps ends
     assert select_frames(names, seed=1, max_ids=5) != select_frames(names, seed=2, max_ids=5)
+
+
+def test_tune_threshold_counts_matches_frame_level_scoring():
+    x, y = _blobs(np.random.default_rng(0), n_ids=4, per=3)
+    counts = np.tile([1, 5, 9], 4)  # unequal tracklet lengths
+    thr, f1 = clustering.tune_threshold(x, y, "agglomerative", grid=np.linspace(0.05, 0.9, 10), counts=counts)
+    labels = clustering.cluster(x, "agglomerative", thr)
+    expect = evaluation.pairwise_prf(np.repeat(y, counts), np.repeat(labels, counts))["f1"]
+    assert np.isclose(f1, expect)

@@ -37,14 +37,22 @@ def relabel_noise(labels: np.ndarray) -> np.ndarray:
 
 
 def tune_threshold(embeddings: np.ndarray, true_ids: np.ndarray, method: str,
-                   grid: np.ndarray | None = None, min_samples: int = 2) -> tuple[float, float]:
-    """Pick the cosine-distance threshold with the best pairwise F1 on a validation set."""
+                   grid: np.ndarray | None = None, min_samples: int = 2,
+                   counts: np.ndarray | None = None) -> tuple[float, float]:
+    """Pick the cosine-distance threshold with the best pairwise F1 on a validation set.
+
+    If `counts` is given (frames per tracklet), every item stands for that many frames and F1 is
+    computed at frame level, so tracklet-level and frame-level methods are scored on the same unit.
+    """
     if grid is None:
         grid = np.linspace(0.05, 0.9, 18)
     best_t, best_f1 = float(grid[0]), -1.0
     for t in grid:
         labels = cluster(embeddings, method, float(t), min_samples)
-        f1 = pairwise_prf(true_ids, labels)["f1"]
+        if counts is not None:
+            f1 = pairwise_prf(np.repeat(true_ids, counts), np.repeat(labels, counts))["f1"]
+        else:
+            f1 = pairwise_prf(true_ids, labels)["f1"]
         if f1 > best_f1:
             best_t, best_f1 = float(t), f1
     return best_t, best_f1

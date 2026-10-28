@@ -1,5 +1,8 @@
 """Evaluate precomputed frame embeddings on MARS-formatted names.
 
+All clustering metrics are frame-level: tracklet-level methods cluster pooled tracklet vectors and each
+tracklet's label is applied to all of its frames, so every method is scored on the same unit.
+
 Simplified protocol (NOT the official MARS query/gallery lists): per identity, camera-1
 tracklets are queries and tracklets from the other cameras are the gallery, with pid 0
 (distractors) kept in the gallery and pid -1 (junk) dropped. Clustering uses a deterministic
@@ -64,15 +67,22 @@ def evaluate(features: np.ndarray, names: list[str], seed: int = 255, max_ids: i
             r = evaluation.retrieval_metrics(feats[q], tpid[q], tcam[q], feats[g], tpid[g], tcam[g])
             row.update({k: v for k, v in r.items() if k != "n_queries"})
             row["n_queries"] = r["n_queries"]
+            n_frames = np.array([len(index[k]) for k in tkeys])
             for split_name, split in (("val", val_ids), ("test", test_ids)):
                 sel = np.isin(tpid, list(split))
-                row[f"_{split_name}"] = (feats[sel], tpid[sel])
+                row[f"_{split_name}"] = (feats[sel], tpid[sel], n_frames[sel])
             min_samples = 2
-        (xv, yv), (xt, yt) = row.pop("_val"), row.pop("_test")
+        if method == "frame":
+            row["_val"], row["_test"] = (*row["_val"], None), (*row["_test"], None)
+        (xv, yv, cv), (xt, yt, ct) = row.pop("_val"), row.pop("_test")
         for cm in ("dbscan", "agglomerative"):
-            thr, _ = clustering.tune_threshold(xv, yv, cm, grid=np.linspace(0.1, 0.9, 9), min_samples=min_samples)
+            thr, _ = clustering.tune_threshold(xv, yv, cm, grid=np.linspace(0.1, 0.9, 9),
+                                               min_samples=min_samples, counts=cv)
             labels = clustering.cluster(xt, cm, thr, min_samples)
-            m = evaluation.cluster_metrics(yt, labels)
+            if ct is not None:  # score tracklet-level clusters at frame level
+                m = evaluation.cluster_metrics(np.repeat(yt, ct), np.repeat(labels, ct))
+            else:
+                m = evaluation.cluster_metrics(yt, labels)
             for k in ("precision", "recall", "f1", "purity", "ari", "clusters_per_identity"):
                 row[f"{cm}_{k}"] = m[k]
             row[f"{cm}_threshold"] = thr
