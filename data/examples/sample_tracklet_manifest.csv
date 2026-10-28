@@ -1,0 +1,4 @@
+track_id,frame_number,timestamp_seconds,x1,y1,x2,y2,confidence,class_name
+1,0,0.0,10,20,50,120,0.95,person
+1,1,0.3333333333333333,12,21,52,121,0.94,person
+1,2,0.6666666666666666,14,22,54,122,0.93,person
