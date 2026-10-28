@@ -107,3 +107,33 @@ class TorchreidEncoder:
         with torch.no_grad():
             feats = self.model(x)
         return feats.cpu().numpy().astype("float32")
+
+
+class ResNet50Encoder:
+    """Frozen ImageNet ResNet-50 (torchvision) global-pooled 2048-d features.
+
+    A simple fallback when torchreid/OSNet is hard to install. Not a ReID-trained model, so expect
+    lower absolute accuracy than OSNet; use it to compare frame vs tracklet aggregation, not to claim SOTA.
+    Requires torch + torchvision; not used in tests.
+    """
+
+    def __init__(self, device: str = "cpu"):
+        import torch
+        import torchvision
+
+        self.torch = torch
+        self.device = device
+        model = torchvision.models.resnet50(weights=torchvision.models.ResNet50_Weights.IMAGENET1K_V2)
+        model.fc = torch.nn.Identity()
+        self.model = model.eval().to(device)
+
+    def encode(self, batch: np.ndarray) -> np.ndarray:
+        """batch: (N, 256, 128, 3) uint8 RGB -> (N, 2048) float32 embeddings."""
+        torch = self.torch
+        x = torch.from_numpy(batch).permute(0, 3, 1, 2).float() / 255.0
+        mean = torch.tensor([0.485, 0.456, 0.406]).view(1, 3, 1, 1)
+        std = torch.tensor([0.229, 0.224, 0.225]).view(1, 3, 1, 1)
+        x = ((x - mean) / std).to(self.device)
+        with torch.no_grad():
+            feats = self.model(x)
+        return feats.cpu().numpy().astype("float32")

@@ -5,14 +5,12 @@ from __future__ import annotations
 import hashlib
 import json
 import random
-import re
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
 import numpy as np
 
-# MARS image names look like 0001C1T0001F001.jpg: person id, camera, tracklet, frame.
-_MARS_RE = re.compile(r"^(-?\d{1,4})C(\d)T(\d{4})F(\d{3,4})")
+from .mars_names import parse_mars_name  # noqa: F401  (re-exported)
 
 
 @dataclass
@@ -40,15 +38,6 @@ def set_seed(seed: int) -> np.random.Generator:
     random.seed(seed)
     np.random.seed(seed)
     return np.random.default_rng(seed)
-
-
-def parse_mars_name(name: str) -> tuple[int, int, int, int]:
-    """Parse a MARS file name into (pid, camera, tracklet, frame)."""
-    m = _MARS_RE.match(Path(name).name)
-    if m is None:
-        raise ValueError(f"Not a MARS file name: {name!r}")
-    pid, cam, trk, frm = (int(g) for g in m.groups())
-    return pid, cam, trk, frm
 
 
 def scan_mars_split(root: str | Path, split_dir: str) -> list[FrameRecord]:

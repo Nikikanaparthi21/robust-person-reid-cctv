@@ -10,6 +10,8 @@ from cctv_reid.tracking import ByteTrackLite, iou_matrix
 def test_parse_mars_name():
     assert io_utils.parse_mars_name("0001C1T0002F015.jpg") == (1, 1, 2, 15)
     assert io_utils.parse_mars_name("-001C3T0010F100.jpg")[0] == -1
+    assert io_utils.parse_mars_name("00-1C1T0001F001.jpg") == (-1, 1, 1, 1)  # junk folder in bbox_test
+    assert io_utils.parse_mars_name("0000C2T0003F010.jpg")[0] == 0  # distractor
     with pytest.raises(ValueError):
         io_utils.parse_mars_name("not_a_mars_name.jpg")
 
@@ -192,3 +194,27 @@ def test_mars_eval_runs_on_mars_named_features():
     assert set(by) == {"frame", "mean", "attention", "quality_filtered", "quality_weighted"}
     assert by["mean"]["rank1"] >= by["frame"]["rank1"] - 1e-9
     assert all(0 <= r["agglomerative_f1"] <= 1 for r in rows)
+
+
+# ---------- MARS subset selection ----------
+def test_select_frames_subset_rules():
+    from cctv_reid.mars_names import select_frames
+
+    names = []
+    for pid in range(1, 21):  # 20 identities, 2 tracklets of 30 frames each
+        for trk in (1, 2):
+            names += [f"{pid:04d}C{trk}T{trk:04d}F{f:03d}.jpg" for f in range(1, 31)]
+    names += [f"0000C1T{t:04d}F{f:03d}.jpg" for t in range(1, 6) for f in range(1, 31)]  # distractors
+    names += ["00-1C1T0001F001.jpg", "00-1C1T0001F002.jpg"]  # junk
+    sel = select_frames(names, seed=255, max_ids=5, max_frames=8, max_distractor_tracklets=2)
+    parsed = [io_utils.parse_mars_name(n) for n in sel]
+    assert sel == select_frames(names, seed=255, max_ids=5, max_frames=8, max_distractor_tracklets=2)
+    assert len({p[0] for p in parsed if p[0] > 0}) == 5
+    assert all(p[0] != -1 for p in parsed)
+    assert len({(p[0], p[1], p[2]) for p in parsed if p[0] == 0}) == 2
+    per_track = {}
+    for p in parsed:
+        per_track.setdefault(p[:3], []).append(p[3])
+    assert all(len(v) <= 8 for v in per_track.values())
+    assert all(v[0] == 1 and v[-1] == 30 for v in per_track.values() if len(v) == 8)  # even spread keeps ends
+    assert select_frames(names, seed=1, max_ids=5) != select_frames(names, seed=2, max_ids=5)
