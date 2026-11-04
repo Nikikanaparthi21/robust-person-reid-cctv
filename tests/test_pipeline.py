@@ -274,6 +274,6 @@ def test_error_analysis_taxonomy_on_mars_named_features():
         names.append(f"{pid + 1:04d}C{cam + 1}T0001F{counter[(pid, cam)]:03d}.jpg")
     res = error_analysis.analyze(ds["frames"], names, "mean", max_ids=12)
     assert res["n_queries"] > 0 and set(res["summary"]) <= {
-        "identity_merge", "distractor_merge", "cross_camera_split", "within_camera_split",
+        "identity_merge", "distractor_merge", "cross_camera_split", "mixed_split",
         "wrong_identity_top1", "distractor_top1"}
     assert "Error analysis" in error_analysis.to_markdown(res)

@@ -7,7 +7,7 @@ Categories
 - false_merge: a cluster contains tracklets of more than one identity. Sub-typed as
   ``distractor_merge`` (a pid-0 distractor tracklet joined a real identity) or ``identity_merge``.
 - false_split: one identity is spread across several clusters; sub-typed ``cross_camera_split``
-  when the pieces are separated by camera, otherwise ``within_camera_split``.
+  when the pieces are separated by camera, otherwise ``mixed_split``.
 - retrieval_miss: rank-1 result is wrong; ``distractor_top1`` or ``wrong_identity_top1``.
 """
 
@@ -70,13 +70,17 @@ def analyze(features: np.ndarray, names: list[str], method: str = "mean", cluste
             for i in members:
                 by_cam.setdefault(int(labels[i]), set()).add(int(t_cam[i]))
             cross = all(len(cams) == 1 for cams in by_cam.values()) and len({next(iter(c)) for c in by_cam.values()}) > 1
-            splits.append({"identity": int(p), "type": "cross_camera_split" if cross else "within_camera_split",
+            splits.append({"identity": int(p), "type": "cross_camera_split" if cross else "mixed_split",
                            "n_clusters": len(cl), "tracklets": [t_keys[i] for i in members][:8]})
 
     # Retrieval: camera-1 queries against other cameras (test ids + distractors).
     q = np.isin(tpid, list(test_ids)) & (tcam == 1)
     g = (np.isin(tpid, list(test_ids)) | (tpid == 0)) & (tcam != 1)
-    qn, gn = embeddings.l2_normalize(feats[q]), embeddings.l2_normalize(feats[g])
+    # float64 avoids spurious matmul warnings seen with float32 on Apple Accelerate; fail loudly if non-finite.
+    qn = embeddings.l2_normalize(feats[q].astype(np.float64))
+    gn = embeddings.l2_normalize(feats[g].astype(np.float64))
+    if not (np.isfinite(qn).all() and np.isfinite(gn).all()):
+        raise ValueError("non-finite values in pooled embeddings; check the extracted features")
     qk, gk = [k for k, m in zip(tkeys, q) if m], [k for k, m in zip(tkeys, g) if m]
     sims = qn @ gn.T
     misses = []
@@ -94,16 +98,17 @@ def analyze(features: np.ndarray, names: list[str], method: str = "mean", cluste
             "false_merges": merges, "false_splits": splits, "retrieval_misses": misses}
 
 
-def to_markdown(res: dict, limit: int = 10) -> str:
+def to_markdown(res: dict, limit: int = 10, seed: int = 255) -> str:
     s = res["summary"]
+    rng = np.random.default_rng(seed)
     lines = [f"# Error analysis: {res['pooling']} pooling + {res['cluster_method']} (threshold {res['threshold']:.2f})", "",
              f"Test identities: {res['n_test_identities']}; retrieval queries: {res['n_queries']}.", "",
              "| Error type | Count |", "|---|---|"]
-    for k in ("identity_merge", "distractor_merge", "cross_camera_split", "within_camera_split",
+    for k in ("identity_merge", "distractor_merge", "cross_camera_split", "mixed_split",
               "wrong_identity_top1", "distractor_top1"):
         lines.append(f"| {k} | {s.get(k, 0)} |")
     for title, key, fmt in (("False merges", "false_merges", lambda e: f"cluster {e['cluster']} ({e['type']}): ids {e['identities']}; e.g. {e['tracklets'][:3]}"),
                             ("False splits", "false_splits", lambda e: f"id {e['identity']} ({e['type']}): {e['n_clusters']} clusters; e.g. {e['tracklets'][:3]}"),
                             ("Retrieval misses", "retrieval_misses", lambda e: f"{e['query']} -> {e['top1']} ({e['type']}, sim {e['similarity']:.2f})")):
-        lines += ["", f"## {title} (first {limit})"] + [f"- {fmt(e)}" for e in res[key][:limit]]
+        lines += ["", f"## {title} ({min(limit, len(res[key]))} random of {len(res[key])}, seed {seed})"] + [f"- {fmt(res[key][i])}" for i in sorted(rng.choice(len(res[key]), min(limit, len(res[key])), replace=False))]
     return "\n".join(lines) + "\n"
