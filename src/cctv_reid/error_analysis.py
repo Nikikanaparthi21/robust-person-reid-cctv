@@ -76,13 +76,15 @@ def analyze(features: np.ndarray, names: list[str], method: str = "mean", cluste
     # Retrieval: camera-1 queries against other cameras (test ids + distractors).
     q = np.isin(tpid, list(test_ids)) & (tcam == 1)
     g = (np.isin(tpid, list(test_ids)) | (tpid == 0)) & (tcam != 1)
-    # float64 avoids spurious matmul warnings seen with float32 on Apple Accelerate; fail loudly if non-finite.
+    # float64; fail loudly if non-finite.
     qn = embeddings.l2_normalize(feats[q].astype(np.float64))
     gn = embeddings.l2_normalize(feats[g].astype(np.float64))
     if not (np.isfinite(qn).all() and np.isfinite(gn).all()):
         raise ValueError("non-finite values in pooled embeddings; check the extracted features")
     qk, gk = [k for k, m in zip(tkeys, q) if m], [k for k, m in zip(tkeys, g) if m]
-    sims = qn @ gn.T
+    sims = np.einsum("ik,jk->ij", qn, gn)  # einsum sidesteps the BLAS matmul that warns on some macOS numpy builds
+    if not np.isfinite(sims).all() or sims.max() > 1 + 1e-6:
+        raise ValueError("invalid similarity matrix")
     misses = []
     for i in range(len(qk)):
         same_cam_same_id = (tpid[g] == tpid[q][i]) & (tcam[g] == tcam[q][i])
