@@ -85,3 +85,77 @@ def timer(store: dict, key: str):
         yield
     finally:
         store[key] = store.get(key, 0.0) + time.perf_counter() - t0
+
+
+# ---------- tracking metrics (IDF1, ID switches) ----------
+def tracking_metrics(gt, pred, iou_thresh: float = 0.5) -> dict[str, float]:
+    """IDF1 and ID switches for one sequence.
+
+    ``gt`` and ``pred`` map ``frame -> list of (track_id, [x1, y1, x2, y2])``.
+    IDF1 uses one global one-to-one assignment between ground-truth and predicted
+    identities (Ristani et al., 2016): IDF1 = 2*IDTP / (2*IDTP + IDFP + IDFN).
+    An ID switch is counted when a ground-truth identity's matched predicted id changes
+    between consecutive matched frames. Only meaningful on data with tracking labels
+    (MARS has none; see docs/experiment-protocol.md).
+    """
+    from scipy.optimize import linear_sum_assignment
+
+    from .tracking import iou_matrix
+
+    frames = sorted(set(gt) | set(pred))
+    gt_ids = sorted({i for f in gt.values() for i, _ in f})
+    pr_ids = sorted({i for f in pred.values() for i, _ in f})
+    n_gt = sum(len(v) for v in gt.values())
+    n_pr = sum(len(v) for v in pred.values())
+    if not gt_ids or not pr_ids:
+        return {"idf1": 0.0, "idp": 0.0, "idr": 0.0, "id_switches": 0, "gt_detections": n_gt, "pred_detections": n_pr}
+    gi = {i: k for k, i in enumerate(gt_ids)}
+    pi = {i: k for k, i in enumerate(pr_ids)}
+
+    # Co-occurrence counts (frames where a gt id and a predicted id overlap enough).
+    overlap = np.zeros((len(gt_ids), len(pr_ids)))
+    per_frame_pairs: dict[int, list[tuple[int, int]]] = {}
+    for f in frames:
+        g, p = gt.get(f, []), pred.get(f, [])
+        if not g or not p:
+            continue
+        iou = iou_matrix(np.array([b for _, b in g]), np.array([b for _, b in p]))
+        r, c = linear_sum_assignment(-iou)
+        pairs = [(g[a][0], p[b][0]) for a, b in zip(r, c) if iou[a, b] >= iou_thresh]
+        per_frame_pairs[f] = pairs
+        for a, b in pairs:
+            overlap[gi[a], pi[b]] += 1
+
+    # Global identity assignment maximising IDTP.
+    r, c = linear_sum_assignment(-overlap)
+    idtp = float(overlap[r, c].sum())
+    idfn, idfp = n_gt - idtp, n_pr - idtp
+    idp = idtp / n_pr if n_pr else 0.0
+    idr = idtp / n_gt if n_gt else 0.0
+    idf1 = 2 * idtp / (2 * idtp + idfp + idfn) if (2 * idtp + idfp + idfn) else 0.0
+
+    # ID switches from frame-level matches.
+    last: dict[int, int] = {}
+    switches = 0
+    for f in frames:
+        for g_id, p_id in per_frame_pairs.get(f, []):
+            if g_id in last and last[g_id] != p_id:
+                switches += 1
+            last[g_id] = p_id
+    return {"idf1": float(idf1), "idp": float(idp), "idr": float(idr), "id_switches": int(switches),
+            "gt_detections": n_gt, "pred_detections": n_pr}
+
+
+# ---------- runtime / memory ----------
+def peak_memory_mb() -> float:
+    """Peak resident memory of this process in MB (Linux reports KB, macOS bytes)."""
+    import resource
+    import sys
+
+    peak = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+    return float(peak / (1024 * 1024) if sys.platform == "darwin" else peak / 1024)
+
+
+def throughput(n_items: int, seconds: float) -> float:
+    """Items per second; 0 when no time was recorded."""
+    return float(n_items / seconds) if seconds > 0 else 0.0

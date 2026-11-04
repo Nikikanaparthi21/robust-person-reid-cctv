@@ -227,3 +227,53 @@ def test_tune_threshold_counts_matches_frame_level_scoring():
     labels = clustering.cluster(x, "agglomerative", thr)
     expect = evaluation.pairwise_prf(np.repeat(y, counts), np.repeat(labels, counts))["f1"]
     assert np.isclose(f1, expect)
+
+
+# ---------- tracking metrics / runtime ----------
+def test_tracking_metrics_perfect_and_switch():
+    box = lambda x: [x, 0, x + 10, 20]
+    gt = {f: [(1, box(f))] for f in range(10)}
+    perfect = {f: [(7, box(f))] for f in range(10)}
+    m = evaluation.tracking_metrics(gt, perfect)
+    assert m["idf1"] == 1.0 and m["id_switches"] == 0
+    # Same person tracked under id 7 then id 8: one switch, IDF1 drops (best id covers 6/10).
+    switched = {f: [(7 if f < 6 else 8, box(f))] for f in range(10)}
+    m = evaluation.tracking_metrics(gt, switched)
+    assert m["id_switches"] == 1
+    assert np.isclose(m["idf1"], 2 * 6 / (2 * 6 + 4 + 4))
+    assert evaluation.tracking_metrics(gt, {})["idf1"] == 0.0
+
+
+def test_tracking_metrics_on_bytetracklite():
+    frames, gt = [], {}
+    for f in range(20):
+        frames.append(from_array(f, [_walk(0, f), _walk(200, f, y=100)], [0.9, 0.9]))
+        gt[f] = [(1, _walk(0, f)), (2, _walk(200, f, y=100))]
+    tracks = ByteTrackLite(min_hits=3).run(frames)
+    pred = {}
+    for tid, hits in tracks.items():
+        for d in hits:
+            pred.setdefault(d.frame, []).append((tid, list(d.box)))
+    m = evaluation.tracking_metrics(gt, pred)
+    assert m["idf1"] == 1.0 and m["id_switches"] == 0
+
+
+def test_runtime_helpers():
+    assert evaluation.peak_memory_mb() > 0
+    assert evaluation.throughput(100, 2.0) == 50.0 and evaluation.throughput(5, 0) == 0.0
+
+
+def test_error_analysis_taxonomy_on_mars_named_features():
+    from cctv_reid import error_analysis
+
+    cfg = synthetic.SynthConfig(n_ids=12, n_cams=3, tracklets_per_cam=1, min_frames=5, max_frames=6)
+    ds = synthetic.make_dataset(cfg, np.random.default_rng(3))
+    names, counter = [], {}
+    for pid, cam in zip(ds["ids"], ds["cams"]):
+        counter[(pid, cam)] = counter.get((pid, cam), 0) + 1
+        names.append(f"{pid + 1:04d}C{cam + 1}T0001F{counter[(pid, cam)]:03d}.jpg")
+    res = error_analysis.analyze(ds["frames"], names, "mean", max_ids=12)
+    assert res["n_queries"] > 0 and set(res["summary"]) <= {
+        "identity_merge", "distractor_merge", "cross_camera_split", "within_camera_split",
+        "wrong_identity_top1", "distractor_top1"}
+    assert "Error analysis" in error_analysis.to_markdown(res)

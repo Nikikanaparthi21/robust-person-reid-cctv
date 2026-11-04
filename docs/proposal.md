@@ -27,20 +27,31 @@ We will compare frame-level versus tracklet-level embeddings, mean versus qualit
 
 ## Deliverables and milestones
 
-- Week 1: literature review, dataset decision, repository, and baseline specification.
-- Week 2: detector, tracker, tracklet extraction, and data manifest.
-- Week 3: frame-level and tracklet-level embedding baseline.
-- Week 4: clustering, retrieval outputs, and evaluation scripts.
-- Week 5: robustness ablations and error analysis.
-- Week 6: figures, report, presentation, and optional paper-style manuscript.
+Dates are aligned with the GitHub milestones (Intermediate Report Oct 28, Midterm Nov 3, Final Nov 10).
 
-## Team roles
+| Date | Milestone | Evidence |
+|---|---|---|
+| Oct 6 | Literature review, dataset decision (MARS), repository, baseline specification | Dataset note, `configs/dataset.yaml` |
+| Oct 13 | Detector, tracker, tracklet extraction, manifest | Tracklet manifest schema, tracker tests (PR #33) |
+| Oct 20 | Frame-level and tracklet-level embedding baseline | Pooling methods, unit tests (PR #31) |
+| Oct 27-28 | Clustering, retrieval, evaluation; **Intermediate report** | Real MARS results, status report |
+| Nov 3 | **Midterm check**: fine-tuned OSNet, attention pooling on real data, robustness runs | Comparison table, robustness curves |
+| Nov 7 | Results frozen | Final tables and figures |
+| Nov 10 | **Final**: error analysis, report, presentation, demo, reproducibility package | Final report, slides, tagged release |
 
-- Nikhil Kanaparthi: coordination, repository, preprocessing, and detection/tracking integration.
-- Team member 2: embedding extraction, tracklet aggregation, and clustering.
-- Team member 3: dataset preparation, evaluation, robustness experiments, and visualizations.
+## Heilmeier checklist
 
-All members will review pull requests, reproduce an experiment, and contribute to the report and presentation.
+| Question | Answer |
+|---|---|
+| What are we trying to do? | Group repeated appearances of the same person in CCTV-style footage into identity clusters for human review. |
+| How is it done today and what are the limits? | Frame-by-frame matching, which is noisy under blur, darkness, low resolution and occlusion. |
+| What is new and why might it work? | Pool embeddings over tracklets (temporal aggregation, including learned attention) and cluster with validation-tuned thresholds. |
+| Who cares? | Security reviewers and investigators who must search long footage; success reduces review time. |
+| Risks | False merges link different people, false splits duplicate them; privacy and camera/domain bias. Outputs are leads, not verified identities. |
+| Cost | No paid data or services: public MARS dataset, free tooling, existing laptops plus one GPU session (Colab or university) for fine-tuning; about 6 weeks of three students' time. |
+| Duration | Six weeks, Sep 30 to Nov 10, 2026. |
+| Midterm exam of success (Nov 3) | Fine-tuned OSNet and pooling comparison on real MARS; tracklet pooling beats the frame baseline in mAP and clustering F1; robustness runs started. |
+| Final exam of success (Nov 10) | Reproducible pipeline, robustness and error analysis, report, slides and demo; all results regenerate from one documented command. |
 
 ## Responsible use
 

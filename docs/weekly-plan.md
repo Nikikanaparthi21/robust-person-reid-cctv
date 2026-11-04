@@ -25,12 +25,12 @@ This provisional calendar begins September 30, 2026. If the instructor provides 
 
 | Workstream | Primary owner | Reviewer |
 |---|---|---|
-| Detection, tracking, preprocessing | Nikhil Kanaparthi | Team member 3 |
-| Embeddings, tracklet aggregation, clustering | Team member 2 | Nikhil Kanaparthi |
-| Metrics, robustness, visualizations, report | Team member 3 | Team member 2 |
+| Detection, tracking evaluation, OSNet fine-tuning | Abhijith Reddy | Nikhil Kanaparthi |
+| Evaluation scripts, clustering, error analysis, final deliverables | Nikhil Kanaparthi | Alaa (@AlaaTarekA) |
+| Attention pooling, robustness, viewer, privacy/ethics | Alaa (@AlaaTarekA) | Abhijith Reddy |
 | Literature, testing, presentation | All members | All members |
 
-Replace Team member 2 and Team member 3 after the team confirms names and preferences.
+Ownership updated Nov 4, 2026 after all three members joined.
 
 ## Weekly review checklist
 
