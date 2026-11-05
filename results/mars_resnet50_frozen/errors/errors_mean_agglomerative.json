@@ -1,0 +1,2049 @@
+{
+  "pooling": "mean",
+  "cluster_method": "agglomerative",
+  "threshold": 0.2,
+  "n_test_identities": 50,
+  "n_queries": 145,
+  "summary": {
+    "distractor_merge": 24,
+    "identity_merge": 26,
+    "mixed_split": 29,
+    "cross_camera_split": 18,
+    "wrong_identity_top1": 81,
+    "distractor_top1": 4
+  },
+  "false_merges": [
+    {
+      "cluster": 0,
+      "type": "distractor_merge",
+      "identities": [
+        0,
+        732,
+        948
+      ],
+      "tracklets": [
+        "0_3_2087",
+        "732_1_7",
+        "732_1_9",
+        "732_1_10",
+        "732_5_20",
+        "948_5_14",
+        "948_5_15",
+        "948_5_17"
+      ]
+    },
+    {
+      "cluster": 1,
+      "type": "identity_merge",
+      "identities": [
+        684,
+        948,
+        950
+      ],
+      "tracklets": [
+        "684_1_8",
+        "948_1_1",
+        "950_1_1",
+        "950_1_3"
+      ]
+    },
+    {
+      "cluster": 3,
+      "type": "identity_merge",
+      "identities": [
+        1340,
+        1490
+      ],
+      "tracklets": [
+        "1340_1_1",
+        "1340_1_2",
+        "1490_1_1",
+        "1490_1_2",
+        "1490_1_3",
+        "1490_1_4"
+      ]
+    },
+    {
+      "cluster": 5,
+      "type": "distractor_merge",
+      "identities": [
+        0,
+        1290
+      ],
+      "tracklets": [
+        "0_2_1548",
+        "1290_2_4",
+        "1290_2_5"
+      ]
+    },
+    {
+      "cluster": 6,
+      "type": "identity_merge",
+      "identities": [
+        220,
+        1124
+      ],
+      "tracklets": [
+        "220_1_8",
+        "220_1_9",
+        "1124_1_5",
+        "1124_1_6"
+      ]
+    },
+    {
+      "cluster": 8,
+      "type": "identity_merge",
+      "identities": [
+        158,
+        684,
+        732,
+        970
+      ],
+      "tracklets": [
+        "158_1_3",
+        "158_1_4",
+        "684_1_6",
+        "732_1_5",
+        "732_1_11",
+        "970_1_2"
+      ]
+    },
+    {
+      "cluster": 9,
+      "type": "distractor_merge",
+      "identities": [
+        0,
+        352
+      ],
+      "tracklets": [
+        "0_1_182",
+        "352_1_2"
+      ]
+    },
+    {
+      "cluster": 10,
+      "type": "distractor_merge",
+      "identities": [
+        0,
+        182,
+        208,
+        220,
+        284,
+        394,
+        468,
+        570,
+        582,
+        970,
+        1054,
+        1088,
+        1340,
+        1490,
+        1500
+      ],
+      "tracklets": [
+        "0_5_2358",
+        "182_2_2",
+        "182_3_3",
+        "182_5_9",
+        "182_5_10",
+        "182_5_11",
+        "208_1_1",
+        "208_1_2"
+      ]
+    },
+    {
+      "cluster": 11,
+      "type": "distractor_merge",
+      "identities": [
+        0,
+        872
+      ],
+      "tracklets": [
+        "0_1_260",
+        "872_2_5",
+        "872_2_6"
+      ]
+    },
+    {
+      "cluster": 13,
+      "type": "distractor_merge",
+      "identities": [
+        0,
+        732
+      ],
+      "tracklets": [
+        "0_5_2465",
+        "732_1_1",
+        "732_1_2",
+        "732_1_3",
+        "732_1_6",
+        "732_1_8",
+        "732_3_13",
+        "732_5_16"
+      ]
+    },
+    {
+      "cluster": 16,
+      "type": "identity_merge",
+      "identities": [
+        220,
+        352,
+        530,
+        570,
+        622,
+        624,
+        1290
+      ],
+      "tracklets": [
+        "220_1_7",
+        "352_1_1",
+        "530_1_1",
+        "530_1_2",
+        "570_1_1",
+        "570_1_2",
+        "622_1_1",
+        "624_1_4"
+      ]
+    },
+    {
+      "cluster": 17,
+      "type": "identity_merge",
+      "identities": [
+        222,
+        520,
+        1362
+      ],
+      "tracklets": [
+        "222_5_17",
+        "222_5_18",
+        "222_5_19",
+        "222_5_20",
+        "222_5_21",
+        "520_5_11",
+        "520_5_12",
+        "1362_5_9"
+      ]
+    },
+    {
+      "cluster": 18,
+      "type": "identity_merge",
+      "identities": [
+        106,
+        208,
+        220,
+        352,
+        468,
+        476,
+        594,
+        766
+      ],
+      "tracklets": [
+        "106_1_3",
+        "106_1_4",
+        "106_3_10",
+        "106_4_11",
+        "106_4_12",
+        "106_4_13",
+        "106_5_14",
+        "106_5_15"
+      ]
+    },
+    {
+      "cluster": 20,
+      "type": "distractor_merge",
+      "identities": [
+        0,
+        4,
+        10,
+        970,
+        1362
+      ],
+      "tracklets": [
+        "0_5_2815",
+        "4_1_1",
+        "4_1_2",
+        "4_5_7",
+        "10_1_1",
+        "10_5_4",
+        "970_1_1",
+        "970_1_6"
+      ]
+    },
+    {
+      "cluster": 21,
+      "type": "identity_merge",
+      "identities": [
+        182,
+        208,
+        220,
+        410,
+        440,
+        442,
+        468,
+        476
+      ],
+      "tracklets": [
+        "182_4_4",
+        "182_4_5",
+        "182_4_6",
+        "182_4_7",
+        "182_4_8",
+        "182_6_12",
+        "208_1_6",
+        "208_3_24"
+      ]
+    },
+    {
+      "cluster": 24,
+      "type": "distractor_merge",
+      "identities": [
+        0,
+        158,
+        160,
+        208,
+        220,
+        282,
+        352,
+        410,
+        440,
+        468,
+        476,
+        530,
+        570,
+        624,
+        766
+      ],
+      "tracklets": [
+        "0_3_2038",
+        "158_3_20",
+        "160_3_3",
+        "208_3_19",
+        "208_3_20",
+        "208_3_23",
+        "208_3_27",
+        "220_3_15"
+      ]
+    },
+    {
+      "cluster": 26,
+      "type": "distractor_merge",
+      "identities": [
+        0,
+        394,
+        440,
+        1340,
+        1362
+      ],
+      "tracklets": [
+        "0_4_2344",
+        "394_4_9",
+        "440_4_4",
+        "1340_2_5",
+        "1340_2_7",
+        "1362_2_6",
+        "1362_2_7"
+      ]
+    },
+    {
+      "cluster": 32,
+      "type": "identity_merge",
+      "identities": [
+        948,
+        1416
+      ],
+      "tracklets": [
+        "948_5_16",
+        "1416_5_8"
+      ]
+    },
+    {
+      "cluster": 35,
+      "type": "identity_merge",
+      "identities": [
+        158,
+        352,
+        1340
+      ],
+      "tracklets": [
+        "158_2_10",
+        "352_2_5",
+        "352_2_6",
+        "1340_2_4"
+      ]
+    },
+    {
+      "cluster": 38,
+      "type": "identity_merge",
+      "identities": [
+        4,
+        158,
+        220,
+        468,
+        684
+      ],
+      "tracklets": [
+        "4_5_5",
+        "158_5_26",
+        "220_3_13",
+        "220_3_14",
+        "468_5_4",
+        "684_5_33",
+        "684_5_35"
+      ]
+    },
+    {
+      "cluster": 41,
+      "type": "distractor_merge",
+      "identities": [
+        0,
+        106,
+        158,
+        570,
+        970,
+        1124
+      ],
+      "tracklets": [
+        "0_2_337",
+        "0_2_390",
+        "0_2_617",
+        "0_2_772",
+        "0_2_798",
+        "0_2_952",
+        "0_2_1555",
+        "106_2_5"
+      ]
+    },
+    {
+      "cluster": 44,
+      "type": "distractor_merge",
+      "identities": [
+        0,
+        220,
+        284
+      ],
+      "tracklets": [
+        "0_6_3039",
+        "220_6_18",
+        "220_6_19",
+        "220_6_20",
+        "284_6_13",
+        "284_6_14"
+      ]
+    },
+    {
+      "cluster": 45,
+      "type": "distractor_merge",
+      "identities": [
+        0,
+        530,
+        624,
+        872
+      ],
+      "tracklets": [
+        "0_5_2386",
+        "530_2_4",
+        "530_2_6",
+        "530_3_9",
+        "530_3_10",
+        "530_5_11",
+        "624_2_6",
+        "872_2_4"
+      ]
+    },
+    {
+      "cluster": 46,
+      "type": "identity_merge",
+      "identities": [
+        158,
+        160,
+        208,
+        284,
+        352
+      ],
+      "tracklets": [
+        "158_6_34",
+        "160_6_5",
+        "160_6_6",
+        "160_6_8",
+        "208_6_38",
+        "208_6_42",
+        "284_6_11",
+        "352_6_10"
+      ]
+    },
+    {
+      "cluster": 50,
+      "type": "identity_merge",
+      "identities": [
+        208,
+        222,
+        284
+      ],
+      "tracklets": [
+        "208_6_44",
+        "222_6_26",
+        "222_6_27",
+        "222_6_28",
+        "222_6_29",
+        "284_6_15"
+      ]
+    },
+    {
+      "cluster": 51,
+      "type": "distractor_merge",
+      "identities": [
+        0,
+        158
+      ],
+      "tracklets": [
+        "0_6_3083",
+        "158_6_35"
+      ]
+    },
+    {
+      "cluster": 52,
+      "type": "distractor_merge",
+      "identities": [
+        0,
+        222
+      ],
+      "tracklets": [
+        "0_5_2370",
+        "222_2_6",
+        "222_3_8",
+        "222_3_9",
+        "222_3_10",
+        "222_3_11",
+        "222_3_12",
+        "222_5_22"
+      ]
+    },
+    {
+      "cluster": 56,
+      "type": "identity_merge",
+      "identities": [
+        684,
+        1124
+      ],
+      "tracklets": [
+        "684_2_13",
+        "684_2_15",
+        "1124_2_9",
+        "1124_5_14",
+        "1124_5_15"
+      ]
+    },
+    {
+      "cluster": 57,
+      "type": "distractor_merge",
+      "identities": [
+        0,
+        530
+      ],
+      "tracklets": [
+        "0_2_1889",
+        "530_2_7"
+      ]
+    },
+    {
+      "cluster": 69,
+      "type": "identity_merge",
+      "identities": [
+        160,
+        208,
+        220
+      ],
+      "tracklets": [
+        "160_6_4",
+        "160_6_7",
+        "160_6_9",
+        "208_6_37",
+        "208_6_39",
+        "208_6_40",
+        "208_6_41",
+        "208_6_43"
+      ]
+    },
+    {
+      "cluster": 70,
+      "type": "distractor_merge",
+      "identities": [
+        0,
+        158
+      ],
+      "tracklets": [
+        "0_2_1212",
+        "0_2_1833",
+        "0_2_1841",
+        "158_2_14"
+      ]
+    },
+    {
+      "cluster": 73,
+      "type": "identity_merge",
+      "identities": [
+        786,
+        1340
+      ],
+      "tracklets": [
+        "786_2_5",
+        "786_2_6",
+        "1340_2_6"
+      ]
+    },
+    {
+      "cluster": 74,
+      "type": "distractor_merge",
+      "identities": [
+        0,
+        106
+      ],
+      "tracklets": [
+        "0_5_2441",
+        "106_3_8"
+      ]
+    },
+    {
+      "cluster": 79,
+      "type": "distractor_merge",
+      "identities": [
+        0,
+        570,
+        1042
+      ],
+      "tracklets": [
+        "0_2_941",
+        "0_2_1348",
+        "570_2_7",
+        "1042_2_3",
+        "1042_2_4",
+        "1042_2_5"
+      ]
+    },
+    {
+      "cluster": 80,
+      "type": "identity_merge",
+      "identities": [
+        394,
+        582,
+        732
+      ],
+      "tracklets": [
+        "394_3_4",
+        "394_3_5",
+        "582_3_7",
+        "732_3_14"
+      ]
+    },
+    {
+      "cluster": 82,
+      "type": "identity_merge",
+      "identities": [
+        732,
+        970
+      ],
+      "tracklets": [
+        "732_1_4",
+        "970_1_3",
+        "970_1_4"
+      ]
+    },
+    {
+      "cluster": 84,
+      "type": "distractor_merge",
+      "identities": [
+        0,
+        948
+      ],
+      "tracklets": [
+        "0_5_2859",
+        "948_4_2",
+        "948_4_3",
+        "948_4_6",
+        "948_4_7",
+        "948_4_8",
+        "948_4_9",
+        "948_4_10"
+      ]
+    },
+    {
+      "cluster": 86,
+      "type": "identity_merge",
+      "identities": [
+        440,
+        582
+      ],
+      "tracklets": [
+        "440_3_3",
+        "440_5_5",
+        "582_3_8"
+      ]
+    },
+    {
+      "cluster": 92,
+      "type": "distractor_merge",
+      "identities": [
+        0,
+        4,
+        158,
+        222
+      ],
+      "tracklets": [
+        "0_5_2489",
+        "0_5_2603",
+        "0_5_2662",
+        "0_5_2700",
+        "0_5_2712",
+        "0_5_2786",
+        "0_5_2840",
+        "0_5_2856"
+      ]
+    },
+    {
+      "cluster": 94,
+      "type": "identity_merge",
+      "identities": [
+        208,
+        1264
+      ],
+      "tracklets": [
+        "208_4_31",
+        "1264_1_1",
+        "1264_1_4",
+        "1264_1_9"
+      ]
+    },
+    {
+      "cluster": 114,
+      "type": "identity_merge",
+      "identities": [
+        10,
+        1124,
+        1288,
+        1362
+      ],
+      "tracklets": [
+        "10_1_2",
+        "1124_1_8",
+        "1288_1_2",
+        "1362_1_2"
+      ]
+    },
+    {
+      "cluster": 138,
+      "type": "identity_merge",
+      "identities": [
+        220,
+        352
+      ],
+      "tracklets": [
+        "220_6_28",
+        "352_6_8",
+        "352_6_9"
+      ]
+    },
+    {
+      "cluster": 148,
+      "type": "identity_merge",
+      "identities": [
+        158,
+        352
+      ],
+      "tracklets": [
+        "158_6_27",
+        "352_6_11"
+      ]
+    },
+    {
+      "cluster": 154,
+      "type": "distractor_merge",
+      "identities": [
+        0,
+        1290
+      ],
+      "tracklets": [
+        "0_5_2803",
+        "1290_5_6"
+      ]
+    },
+    {
+      "cluster": 161,
+      "type": "identity_merge",
+      "identities": [
+        222,
+        352,
+        570,
+        624
+      ],
+      "tracklets": [
+        "222_2_7",
+        "352_2_3",
+        "570_2_6",
+        "624_2_5"
+      ]
+    },
+    {
+      "cluster": 166,
+      "type": "identity_merge",
+      "identities": [
+        1042,
+        1054
+      ],
+      "tracklets": [
+        "1042_1_1",
+        "1042_1_2",
+        "1054_1_1",
+        "1054_1_2",
+        "1054_1_3"
+      ]
+    },
+    {
+      "cluster": 168,
+      "type": "distractor_merge",
+      "identities": [
+        0,
+        530,
+        570
+      ],
+      "tracklets": [
+        "0_2_1318",
+        "530_2_5",
+        "570_2_4",
+        "570_2_8"
+      ]
+    },
+    {
+      "cluster": 170,
+      "type": "distractor_merge",
+      "identities": [
+        0,
+        1416
+      ],
+      "tracklets": [
+        "0_5_2758",
+        "1416_1_1",
+        "1416_1_2",
+        "1416_5_4",
+        "1416_5_5",
+        "1416_5_6",
+        "1416_5_7",
+        "1416_5_9"
+      ]
+    },
+    {
+      "cluster": 189,
+      "type": "distractor_merge",
+      "identities": [
+        0,
+        1362
+      ],
+      "tracklets": [
+        "0_1_299",
+        "1362_2_5"
+      ]
+    },
+    {
+      "cluster": 190,
+      "type": "identity_merge",
+      "identities": [
+        476,
+        530
+      ],
+      "tracklets": [
+        "476_4_5",
+        "476_4_6",
+        "476_4_7",
+        "530_1_3"
+      ]
+    }
+  ],
+  "false_splits": [
+    {
+      "identity": 4,
+      "type": "mixed_split",
+      "n_clusters": 5,
+      "tracklets": [
+        "4_1_1",
+        "4_1_2",
+        "4_2_3",
+        "4_2_4",
+        "4_5_5",
+        "4_5_6",
+        "4_5_7",
+        "4_5_8"
+      ]
+    },
+    {
+      "identity": 8,
+      "type": "cross_camera_split",
+      "n_clusters": 3,
+      "tracklets": [
+        "8_1_1",
+        "8_1_2",
+        "8_1_3",
+        "8_3_4",
+        "8_6_5"
+      ]
+    },
+    {
+      "identity": 10,
+      "type": "mixed_split",
+      "n_clusters": 2,
+      "tracklets": [
+        "10_1_1",
+        "10_1_2",
+        "10_5_4"
+      ]
+    },
+    {
+      "identity": 106,
+      "type": "mixed_split",
+      "n_clusters": 6,
+      "tracklets": [
+        "106_1_1",
+        "106_1_2",
+        "106_1_3",
+        "106_1_4",
+        "106_2_5",
+        "106_2_6",
+        "106_2_7",
+        "106_3_8"
+      ]
+    },
+    {
+      "identity": 158,
+      "type": "mixed_split",
+      "n_clusters": 21,
+      "tracklets": [
+        "158_1_1",
+        "158_1_2",
+        "158_1_3",
+        "158_1_4",
+        "158_2_5",
+        "158_2_6",
+        "158_2_7",
+        "158_2_8"
+      ]
+    },
+    {
+      "identity": 160,
+      "type": "cross_camera_split",
+      "n_clusters": 4,
+      "tracklets": [
+        "160_2_1",
+        "160_2_2",
+        "160_3_3",
+        "160_6_4",
+        "160_6_5",
+        "160_6_6",
+        "160_6_7",
+        "160_6_8"
+      ]
+    },
+    {
+      "identity": 182,
+      "type": "mixed_split",
+      "n_clusters": 3,
+      "tracklets": [
+        "182_1_1",
+        "182_2_2",
+        "182_3_3",
+        "182_4_4",
+        "182_4_5",
+        "182_4_6",
+        "182_4_7",
+        "182_4_8"
+      ]
+    },
+    {
+      "identity": 208,
+      "type": "mixed_split",
+      "n_clusters": 12,
+      "tracklets": [
+        "208_1_1",
+        "208_1_2",
+        "208_1_3",
+        "208_1_4",
+        "208_1_5",
+        "208_1_6",
+        "208_1_7",
+        "208_2_8"
+      ]
+    },
+    {
+      "identity": 220,
+      "type": "cross_camera_split",
+      "n_clusters": 16,
+      "tracklets": [
+        "220_1_1",
+        "220_1_2",
+        "220_1_3",
+        "220_1_4",
+        "220_1_5",
+        "220_1_6",
+        "220_1_7",
+        "220_1_8"
+      ]
+    },
+    {
+      "identity": 222,
+      "type": "mixed_split",
+      "n_clusters": 9,
+      "tracklets": [
+        "222_1_1",
+        "222_1_2",
+        "222_1_3",
+        "222_1_4",
+        "222_1_5",
+        "222_2_6",
+        "222_2_7",
+        "222_3_8"
+      ]
+    },
+    {
+      "identity": 282,
+      "type": "cross_camera_split",
+      "n_clusters": 4,
+      "tracklets": [
+        "282_2_1",
+        "282_2_2",
+        "282_2_3",
+        "282_2_4",
+        "282_2_5",
+        "282_3_6",
+        "282_6_7"
+      ]
+    },
+    {
+      "identity": 284,
+      "type": "mixed_split",
+      "n_clusters": 7,
+      "tracklets": [
+        "284_1_1",
+        "284_1_2",
+        "284_1_3",
+        "284_1_4",
+        "284_1_5",
+        "284_2_6",
+        "284_3_7",
+        "284_3_8"
+      ]
+    },
+    {
+      "identity": 352,
+      "type": "cross_camera_split",
+      "n_clusters": 9,
+      "tracklets": [
+        "352_1_1",
+        "352_1_2",
+        "352_2_3",
+        "352_2_4",
+        "352_2_5",
+        "352_2_6",
+        "352_3_7",
+        "352_6_8"
+      ]
+    },
+    {
+      "identity": 394,
+      "type": "mixed_split",
+      "n_clusters": 4,
+      "tracklets": [
+        "394_1_1",
+        "394_3_2",
+        "394_3_3",
+        "394_3_4",
+        "394_3_5",
+        "394_3_6",
+        "394_3_7",
+        "394_3_8"
+      ]
+    },
+    {
+      "identity": 410,
+      "type": "cross_camera_split",
+      "n_clusters": 2,
+      "tracklets": [
+        "410_2_1",
+        "410_2_2",
+        "410_2_3",
+        "410_3_4",
+        "410_3_5"
+      ]
+    },
+    {
+      "identity": 440,
+      "type": "mixed_split",
+      "n_clusters": 4,
+      "tracklets": [
+        "440_2_1",
+        "440_3_2",
+        "440_3_3",
+        "440_4_4",
+        "440_5_5"
+      ]
+    },
+    {
+      "identity": 442,
+      "type": "mixed_split",
+      "n_clusters": 5,
+      "tracklets": [
+        "442_1_1",
+        "442_2_2",
+        "442_2_3",
+        "442_2_4",
+        "442_3_5",
+        "442_3_6",
+        "442_3_7",
+        "442_3_8"
+      ]
+    },
+    {
+      "identity": 444,
+      "type": "mixed_split",
+      "n_clusters": 3,
+      "tracklets": [
+        "444_1_1",
+        "444_2_2",
+        "444_2_3",
+        "444_2_4",
+        "444_2_5",
+        "444_2_6",
+        "444_3_7"
+      ]
+    },
+    {
+      "identity": 468,
+      "type": "mixed_split",
+      "n_clusters": 5,
+      "tracklets": [
+        "468_3_1",
+        "468_3_2",
+        "468_3_3",
+        "468_5_4",
+        "468_5_5",
+        "468_5_6",
+        "468_5_7",
+        "468_5_8"
+      ]
+    },
+    {
+      "identity": 476,
+      "type": "mixed_split",
+      "n_clusters": 4,
+      "tracklets": [
+        "476_3_1",
+        "476_3_2",
+        "476_3_3",
+        "476_3_4",
+        "476_4_5",
+        "476_4_6",
+        "476_4_7",
+        "476_5_8"
+      ]
+    },
+    {
+      "identity": 520,
+      "type": "mixed_split",
+      "n_clusters": 2,
+      "tracklets": [
+        "520_3_1",
+        "520_3_2",
+        "520_3_3",
+        "520_3_4",
+        "520_4_5",
+        "520_4_6",
+        "520_4_7",
+        "520_4_8"
+      ]
+    },
+    {
+      "identity": 530,
+      "type": "mixed_split",
+      "n_clusters": 7,
+      "tracklets": [
+        "530_1_1",
+        "530_1_2",
+        "530_1_3",
+        "530_2_4",
+        "530_2_5",
+        "530_2_6",
+        "530_2_7",
+        "530_3_8"
+      ]
+    },
+    {
+      "identity": 570,
+      "type": "cross_camera_split",
+      "n_clusters": 7,
+      "tracklets": [
+        "570_1_1",
+        "570_1_2",
+        "570_2_3",
+        "570_2_4",
+        "570_2_5",
+        "570_2_6",
+        "570_2_7",
+        "570_2_8"
+      ]
+    },
+    {
+      "identity": 580,
+      "type": "cross_camera_split",
+      "n_clusters": 2,
+      "tracklets": [
+        "580_4_1",
+        "580_5_2",
+        "580_5_3",
+        "580_5_4",
+        "580_5_5",
+        "580_5_6",
+        "580_5_7"
+      ]
+    },
+    {
+      "identity": 582,
+      "type": "mixed_split",
+      "n_clusters": 5,
+      "tracklets": [
+        "582_1_1",
+        "582_1_2",
+        "582_1_3",
+        "582_3_4",
+        "582_3_5",
+        "582_3_6",
+        "582_3_7",
+        "582_3_8"
+      ]
+    },
+    {
+      "identity": 594,
+      "type": "mixed_split",
+      "n_clusters": 2,
+      "tracklets": [
+        "594_3_1",
+        "594_3_2",
+        "594_3_3",
+        "594_3_4",
+        "594_3_5",
+        "594_3_6",
+        "594_3_7",
+        "594_3_8"
+      ]
+    },
+    {
+      "identity": 622,
+      "type": "cross_camera_split",
+      "n_clusters": 3,
+      "tracklets": [
+        "622_1_1",
+        "622_2_2",
+        "622_2_3",
+        "622_3_4"
+      ]
+    },
+    {
+      "identity": 624,
+      "type": "cross_camera_split",
+      "n_clusters": 6,
+      "tracklets": [
+        "624_1_1",
+        "624_1_2",
+        "624_1_3",
+        "624_1_4",
+        "624_2_5",
+        "624_2_6",
+        "624_3_7",
+        "624_3_8"
+      ]
+    },
+    {
+      "identity": 684,
+      "type": "mixed_split",
+      "n_clusters": 10,
+      "tracklets": [
+        "684_1_1",
+        "684_1_2",
+        "684_1_3",
+        "684_1_4",
+        "684_1_5",
+        "684_1_6",
+        "684_1_7",
+        "684_1_8"
+      ]
+    },
+    {
+      "identity": 732,
+      "type": "mixed_split",
+      "n_clusters": 6,
+      "tracklets": [
+        "732_1_1",
+        "732_1_2",
+        "732_1_3",
+        "732_1_4",
+        "732_1_5",
+        "732_1_6",
+        "732_1_7",
+        "732_1_8"
+      ]
+    },
+    {
+      "identity": 766,
+      "type": "mixed_split",
+      "n_clusters": 3,
+      "tracklets": [
+        "766_1_1",
+        "766_1_2",
+        "766_3_3",
+        "766_3_4",
+        "766_3_5",
+        "766_3_6",
+        "766_3_7",
+        "766_3_8"
+      ]
+    },
+    {
+      "identity": 786,
+      "type": "mixed_split",
+      "n_clusters": 4,
+      "tracklets": [
+        "786_1_1",
+        "786_1_2",
+        "786_2_3",
+        "786_2_4",
+        "786_2_5",
+        "786_2_6",
+        "786_2_7",
+        "786_2_8"
+      ]
+    },
+    {
+      "identity": 872,
+      "type": "cross_camera_split",
+      "n_clusters": 3,
+      "tracklets": [
+        "872_1_1",
+        "872_1_2",
+        "872_1_3",
+        "872_2_4",
+        "872_2_5",
+        "872_2_6",
+        "872_2_7"
+      ]
+    },
+    {
+      "identity": 948,
+      "type": "mixed_split",
+      "n_clusters": 7,
+      "tracklets": [
+        "948_1_1",
+        "948_4_2",
+        "948_4_3",
+        "948_4_4",
+        "948_4_5",
+        "948_4_6",
+        "948_4_7",
+        "948_4_8"
+      ]
+    },
+    {
+      "identity": 950,
+      "type": "cross_camera_split",
+      "n_clusters": 4,
+      "tracklets": [
+        "950_1_1",
+        "950_1_2",
+        "950_1_3",
+        "950_5_4",
+        "950_5_5",
+        "950_5_6",
+        "950_5_7",
+        "950_5_8"
+      ]
+    },
+    {
+      "identity": 970,
+      "type": "mixed_split",
+      "n_clusters": 7,
+      "tracklets": [
+        "970_1_1",
+        "970_1_2",
+        "970_1_3",
+        "970_1_4",
+        "970_1_5",
+        "970_1_6",
+        "970_2_7",
+        "970_2_8"
+      ]
+    },
+    {
+      "identity": 1042,
+      "type": "cross_camera_split",
+      "n_clusters": 2,
+      "tracklets": [
+        "1042_1_1",
+        "1042_1_2",
+        "1042_2_3",
+        "1042_2_4",
+        "1042_2_5"
+      ]
+    },
+    {
+      "identity": 1054,
+      "type": "cross_camera_split",
+      "n_clusters": 3,
+      "tracklets": [
+        "1054_1_1",
+        "1054_1_2",
+        "1054_1_3",
+        "1054_2_4",
+        "1054_2_5",
+        "1054_2_6"
+      ]
+    },
+    {
+      "identity": 1088,
+      "type": "cross_camera_split",
+      "n_clusters": 4,
+      "tracklets": [
+        "1088_1_1",
+        "1088_1_2",
+        "1088_1_3",
+        "1088_2_4",
+        "1088_2_5",
+        "1088_2_6",
+        "1088_2_7",
+        "1088_2_8"
+      ]
+    },
+    {
+      "identity": 1124,
+      "type": "mixed_split",
+      "n_clusters": 7,
+      "tracklets": [
+        "1124_1_1",
+        "1124_1_2",
+        "1124_1_3",
+        "1124_1_4",
+        "1124_1_5",
+        "1124_1_6",
+        "1124_1_7",
+        "1124_1_8"
+      ]
+    },
+    {
+      "identity": 1264,
+      "type": "mixed_split",
+      "n_clusters": 2,
+      "tracklets": [
+        "1264_1_1",
+        "1264_1_2",
+        "1264_1_3",
+        "1264_1_4",
+        "1264_1_5",
+        "1264_1_6",
+        "1264_1_7",
+        "1264_1_8"
+      ]
+    },
+    {
+      "identity": 1288,
+      "type": "mixed_split",
+      "n_clusters": 3,
+      "tracklets": [
+        "1288_1_1",
+        "1288_1_2",
+        "1288_1_3",
+        "1288_1_4",
+        "1288_1_5",
+        "1288_2_6",
+        "1288_2_7",
+        "1288_2_8"
+      ]
+    },
+    {
+      "identity": 1290,
+      "type": "cross_camera_split",
+      "n_clusters": 3,
+      "tracklets": [
+        "1290_1_1",
+        "1290_1_2",
+        "1290_1_3",
+        "1290_2_4",
+        "1290_2_5",
+        "1290_5_6"
+      ]
+    },
+    {
+      "identity": 1340,
+      "type": "cross_camera_split",
+      "n_clusters": 5,
+      "tracklets": [
+        "1340_1_1",
+        "1340_1_2",
+        "1340_2_3",
+        "1340_2_4",
+        "1340_2_5",
+        "1340_2_6",
+        "1340_2_7"
+      ]
+    },
+    {
+      "identity": 1362,
+      "type": "mixed_split",
+      "n_clusters": 6,
+      "tracklets": [
+        "1362_1_1",
+        "1362_1_2",
+        "1362_2_3",
+        "1362_2_4",
+        "1362_2_5",
+        "1362_2_6",
+        "1362_2_7",
+        "1362_5_8"
+      ]
+    },
+    {
+      "identity": 1416,
+      "type": "mixed_split",
+      "n_clusters": 3,
+      "tracklets": [
+        "1416_1_1",
+        "1416_1_2",
+        "1416_1_3",
+        "1416_5_4",
+        "1416_5_5",
+        "1416_5_6",
+        "1416_5_7",
+        "1416_5_8"
+      ]
+    },
+    {
+      "identity": 1490,
+      "type": "cross_camera_split",
+      "n_clusters": 3,
+      "tracklets": [
+        "1490_1_1",
+        "1490_1_2",
+        "1490_1_3",
+        "1490_1_4",
+        "1490_1_5",
+        "1490_2_6",
+        "1490_2_7",
+        "1490_2_8"
+      ]
+    }
+  ],
+  "retrieval_misses": [
+    {
+      "query": "4_1_2",
+      "top1": "10_5_4",
+      "type": "wrong_identity_top1",
+      "similarity": 0.8625996662044246
+    },
+    {
+      "query": "8_1_1",
+      "top1": "1340_2_5",
+      "type": "wrong_identity_top1",
+      "similarity": 0.7667931603976859
+    },
+    {
+      "query": "8_1_2",
+      "top1": "1340_2_5",
+      "type": "wrong_identity_top1",
+      "similarity": 0.784268001160392
+    },
+    {
+      "query": "8_1_3",
+      "top1": "1340_2_5",
+      "type": "wrong_identity_top1",
+      "similarity": 0.7859367403100165
+    },
+    {
+      "query": "10_1_2",
+      "top1": "0_3_2087",
+      "type": "distractor_top1",
+      "similarity": 0.8185478722576007
+    },
+    {
+      "query": "158_1_1",
+      "top1": "222_4_13",
+      "type": "wrong_identity_top1",
+      "similarity": 0.8310754794447017
+    },
+    {
+      "query": "158_1_2",
+      "top1": "950_5_9",
+      "type": "wrong_identity_top1",
+      "similarity": 0.8688229687172926
+    },
+    {
+      "query": "158_1_3",
+      "top1": "520_5_12",
+      "type": "wrong_identity_top1",
+      "similarity": 0.7556821888013059
+    },
+    {
+      "query": "158_1_4",
+      "top1": "222_5_25",
+      "type": "wrong_identity_top1",
+      "similarity": 0.831401017382763
+    },
+    {
+      "query": "208_1_3",
+      "top1": "468_3_3",
+      "type": "wrong_identity_top1",
+      "similarity": 0.865896069644508
+    },
+    {
+      "query": "208_1_4",
+      "top1": "468_5_7",
+      "type": "wrong_identity_top1",
+      "similarity": 0.8717555048121892
+    },
+    {
+      "query": "208_1_5",
+      "top1": "476_4_6",
+      "type": "wrong_identity_top1",
+      "similarity": 0.8637143487730246
+    },
+    {
+      "query": "220_1_1",
+      "top1": "468_5_5",
+      "type": "wrong_identity_top1",
+      "similarity": 0.9082257958607396
+    },
+    {
+      "query": "220_1_3",
+      "top1": "476_5_9",
+      "type": "wrong_identity_top1",
+      "similarity": 0.8809829683055339
+    },
+    {
+      "query": "220_1_4",
+      "top1": "476_3_2",
+      "type": "wrong_identity_top1",
+      "similarity": 0.8346657139300337
+    },
+    {
+      "query": "220_1_5",
+      "top1": "476_3_2",
+      "type": "wrong_identity_top1",
+      "similarity": 0.8061847624764141
+    },
+    {
+      "query": "220_1_6",
+      "top1": "476_3_1",
+      "type": "wrong_identity_top1",
+      "similarity": 0.8062747036974279
+    },
+    {
+      "query": "220_1_7",
+      "top1": "476_3_1",
+      "type": "wrong_identity_top1",
+      "similarity": 0.850507086138213
+    },
+    {
+      "query": "220_1_8",
+      "top1": "222_5_25",
+      "type": "wrong_identity_top1",
+      "similarity": 0.775634623861641
+    },
+    {
+      "query": "220_1_9",
+      "top1": "222_5_25",
+      "type": "wrong_identity_top1",
+      "similarity": 0.7417289283665209
+    },
+    {
+      "query": "222_1_4",
+      "top1": "284_6_10",
+      "type": "wrong_identity_top1",
+      "similarity": 0.671756893457488
+    },
+    {
+      "query": "284_1_1",
+      "top1": "0_2_1664",
+      "type": "distractor_top1",
+      "similarity": 0.7295988459781667
+    },
+    {
+      "query": "352_1_1",
+      "top1": "476_3_2",
+      "type": "wrong_identity_top1",
+      "similarity": 0.8686608205022412
+    },
+    {
+      "query": "352_1_2",
+      "top1": "476_5_9",
+      "type": "wrong_identity_top1",
+      "similarity": 0.794811133129333
+    },
+    {
+      "query": "530_1_1",
+      "top1": "182_4_4",
+      "type": "wrong_identity_top1",
+      "similarity": 0.8108914601812542
+    },
+    {
+      "query": "530_1_2",
+      "top1": "182_4_4",
+      "type": "wrong_identity_top1",
+      "similarity": 0.8367787338587115
+    },
+    {
+      "query": "530_1_3",
+      "top1": "476_4_6",
+      "type": "wrong_identity_top1",
+      "similarity": 0.8728357702106807
+    },
+    {
+      "query": "570_1_1",
+      "top1": "182_4_4",
+      "type": "wrong_identity_top1",
+      "similarity": 0.8206655368411244
+    },
+    {
+      "query": "570_1_2",
+      "top1": "476_3_3",
+      "type": "wrong_identity_top1",
+      "similarity": 0.8565914451759902
+    },
+    {
+      "query": "582_1_1",
+      "top1": "970_4_9",
+      "type": "wrong_identity_top1",
+      "similarity": 0.9195391520590727
+    },
+    {
+      "query": "582_1_2",
+      "top1": "284_2_6",
+      "type": "wrong_identity_top1",
+      "similarity": 0.8182878956126153
+    },
+    {
+      "query": "582_1_3",
+      "top1": "0_5_2823",
+      "type": "distractor_top1",
+      "similarity": 0.6722138277599379
+    },
+    {
+      "query": "622_1_1",
+      "top1": "476_3_3",
+      "type": "wrong_identity_top1",
+      "similarity": 0.8287239418109962
+    },
+    {
+      "query": "624_1_2",
+      "top1": "394_3_3",
+      "type": "wrong_identity_top1",
+      "similarity": 0.7959037315006601
+    },
+    {
+      "query": "624_1_3",
+      "top1": "282_2_5",
+      "type": "wrong_identity_top1",
+      "similarity": 0.7662114202847442
+    },
+    {
+      "query": "624_1_4",
+      "top1": "182_4_4",
+      "type": "wrong_identity_top1",
+      "similarity": 0.8485700470296432
+    },
+    {
+      "query": "732_1_4",
+      "top1": "222_6_29",
+      "type": "wrong_identity_top1",
+      "similarity": 0.8210239378149776
+    },
+    {
+      "query": "732_1_5",
+      "top1": "520_5_12",
+      "type": "wrong_identity_top1",
+      "similarity": 0.8001108673799197
+    },
+    {
+      "query": "732_1_7",
+      "top1": "948_5_18",
+      "type": "wrong_identity_top1",
+      "similarity": 0.8478881251073034
+    },
+    {
+      "query": "732_1_11",
+      "top1": "222_5_25",
+      "type": "wrong_identity_top1",
+      "similarity": 0.7806938641614134
+    },
+    {
+      "query": "732_1_12",
+      "top1": "440_4_4",
+      "type": "wrong_identity_top1",
+      "similarity": 0.8394768246256427
+    },
+    {
+      "query": "766_1_2",
+      "top1": "594_3_3",
+      "type": "wrong_identity_top1",
+      "similarity": 0.8751632683907653
+    },
+    {
+      "query": "872_1_1",
+      "top1": "182_4_4",
+      "type": "wrong_identity_top1",
+      "similarity": 0.7909267842158513
+    },
+    {
+      "query": "872_1_2",
+      "top1": "282_2_1",
+      "type": "wrong_identity_top1",
+      "similarity": 0.7220349830584342
+    },
+    {
+      "query": "872_1_3",
+      "top1": "222_5_25",
+      "type": "wrong_identity_top1",
+      "similarity": 0.7304413209986668
+    },
+    {
+      "query": "950_1_1",
+      "top1": "160_6_4",
+      "type": "wrong_identity_top1",
+      "similarity": 0.8371161003793197
+    },
+    {
+      "query": "950_1_2",
+      "top1": "160_6_4",
+      "type": "wrong_identity_top1",
+      "similarity": 0.7226301502289322
+    },
+    {
+      "query": "950_1_3",
+      "top1": "732_5_23",
+      "type": "wrong_identity_top1",
+      "similarity": 0.8717427641599673
+    },
+    {
+      "query": "970_1_2",
+      "top1": "222_5_25",
+      "type": "wrong_identity_top1",
+      "similarity": 0.7525862824465568
+    },
+    {
+      "query": "970_1_3",
+      "top1": "948_4_6",
+      "type": "wrong_identity_top1",
+      "similarity": 0.7740050359540256
+    },
+    {
+      "query": "970_1_4",
+      "top1": "948_4_6",
+      "type": "wrong_identity_top1",
+      "similarity": 0.7826746168358841
+    },
+    {
+      "query": "970_1_5",
+      "top1": "1362_5_8",
+      "type": "wrong_identity_top1",
+      "similarity": 0.7567326513442192
+    },
+    {
+      "query": "970_1_6",
+      "top1": "1362_5_8",
+      "type": "wrong_identity_top1",
+      "similarity": 0.8624816647586686
+    },
+    {
+      "query": "1042_1_1",
+      "top1": "476_3_2",
+      "type": "wrong_identity_top1",
+      "similarity": 0.8255950543213444
+    },
+    {
+      "query": "1042_1_2",
+      "top1": "222_5_25",
+      "type": "wrong_identity_top1",
+      "similarity": 0.7920979899241336
+    },
+    {
+      "query": "1054_1_1",
+      "top1": "476_3_2",
+      "type": "wrong_identity_top1",
+      "similarity": 0.8188903617603907
+    },
+    {
+      "query": "1054_1_2",
+      "top1": "222_5_25",
+      "type": "wrong_identity_top1",
+      "similarity": 0.8172559082468898
+    },
+    {
+      "query": "1054_1_3",
+      "top1": "222_5_25",
+      "type": "wrong_identity_top1",
+      "similarity": 0.8062762016086715
+    },
+    {
+      "query": "1088_1_1",
+      "top1": "442_3_7",
+      "type": "wrong_identity_top1",
+      "similarity": 0.8367111269468208
+    },
+    {
+      "query": "1088_1_3",
+      "top1": "442_3_7",
+      "type": "wrong_identity_top1",
+      "similarity": 0.8157872154718827
+    },
+    {
+      "query": "1124_1_1",
+      "top1": "442_3_8",
+      "type": "wrong_identity_top1",
+      "similarity": 0.6908022222576831
+    },
+    {
+      "query": "1124_1_2",
+      "top1": "410_2_3",
+      "type": "wrong_identity_top1",
+      "similarity": 0.7444527303965975
+    },
+    {
+      "query": "1124_1_3",
+      "top1": "410_2_3",
+      "type": "wrong_identity_top1",
+      "similarity": 0.7675552560482624
+    },
+    {
+      "query": "1124_1_4",
+      "top1": "442_3_7",
+      "type": "wrong_identity_top1",
+      "similarity": 0.7947696927444585
+    },
+    {
+      "query": "1124_1_5",
+      "top1": "222_5_25",
+      "type": "wrong_identity_top1",
+      "similarity": 0.7966995716181413
+    },
+    {
+      "query": "1124_1_6",
+      "top1": "222_5_25",
+      "type": "wrong_identity_top1",
+      "similarity": 0.7460264648294026
+    },
+    {
+      "query": "1124_1_8",
+      "top1": "0_5_2786",
+      "type": "distractor_top1",
+      "similarity": 0.814134053672146
+    },
+    {
+      "query": "1264_1_1",
+      "top1": "208_4_31",
+      "type": "wrong_identity_top1",
+      "similarity": 0.818923174242223
+    },
+    {
+      "query": "1264_1_4",
+      "top1": "468_5_8",
+      "type": "wrong_identity_top1",
+      "similarity": 0.8325913894633546
+    },
+    {
+      "query": "1264_1_7",
+      "top1": "208_3_29",
+      "type": "wrong_identity_top1",
+      "similarity": 0.8207122947317362
+    },
+    {
+      "query": "1264_1_8",
+      "top1": "468_5_8",
+      "type": "wrong_identity_top1",
+      "similarity": 0.8412062973804535
+    },
+    {
+      "query": "1264_1_9",
+      "top1": "1124_5_15",
+      "type": "wrong_identity_top1",
+      "similarity": 0.8590496117421224
+    },
+    {
+      "query": "1288_1_1",
+      "top1": "948_4_6",
+      "type": "wrong_identity_top1",
+      "similarity": 0.7766030211638237
+    },
+    {
+      "query": "1288_1_2",
+      "top1": "222_5_20",
+      "type": "wrong_identity_top1",
+      "similarity": 0.8428490719527413
+    },
+    {
+      "query": "1290_1_1",
+      "top1": "948_4_10",
+      "type": "wrong_identity_top1",
+      "similarity": 0.8103660502070245
+    },
+    {
+      "query": "1290_1_2",
+      "top1": "948_5_20",
+      "type": "wrong_identity_top1",
+      "similarity": 0.8031376279041924
+    },
+    {
+      "query": "1290_1_3",
+      "top1": "948_5_20",
+      "type": "wrong_identity_top1",
+      "similarity": 0.8503904946789642
+    },
+    {
+      "query": "1340_1_1",
+      "top1": "476_5_8",
+      "type": "wrong_identity_top1",
+      "similarity": 0.8366853785616839
+    },
+    {
+      "query": "1362_1_2",
+      "top1": "520_5_12",
+      "type": "wrong_identity_top1",
+      "similarity": 0.8645339598784422
+    },
+    {
+      "query": "1490_1_1",
+      "top1": "410_2_2",
+      "type": "wrong_identity_top1",
+      "similarity": 0.8189594047893077
+    },
+    {
+      "query": "1490_1_2",
+      "top1": "440_2_1",
+      "type": "wrong_identity_top1",
+      "similarity": 0.842603697805924
+    },
+    {
+      "query": "1490_1_3",
+      "top1": "476_3_2",
+      "type": "wrong_identity_top1",
+      "similarity": 0.8619139957322426
+    },
+    {
+      "query": "1490_1_4",
+      "top1": "476_3_2",
+      "type": "wrong_identity_top1",
+      "similarity": 0.8364483970729268
+    },
+    {
+      "query": "1490_1_5",
+      "top1": "282_2_1",
+      "type": "wrong_identity_top1",
+      "similarity": 0.791052823148421
+    },
+    {
+      "query": "1500_1_2",
+      "top1": "970_4_9",
+      "type": "wrong_identity_top1",
+      "similarity": 0.9067303642610431
+    }
+  ]
+}
