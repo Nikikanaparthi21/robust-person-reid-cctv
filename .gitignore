@@ -15,6 +15,7 @@ venv/
 *.jpg
 *.jpeg
 *.png
+!results/**/*.png
 
 # Model artifacts and generated outputs
 *.pt
