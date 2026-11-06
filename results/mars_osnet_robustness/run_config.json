@@ -1,0 +1,30 @@
+{
+  "zip": "/Users/nikhilkanaparthi/Downloads/MARS dataset/data/bbox_test.zip",
+  "out": "results/mars_osnet_robustness",
+  "model": "osnet_x1_0",
+  "weights": "models/osnet_ft/best.pth",
+  "device": "mps",
+  "conditions": [
+    "clean",
+    "blur_s2",
+    "blur_s4",
+    "dark_0.5",
+    "dark_0.25",
+    "lowres_0.5",
+    "lowres_0.25",
+    "occl_0.25",
+    "occl_0.5"
+  ],
+  "sampling": [
+    2,
+    4,
+    8
+  ],
+  "batch": 128,
+  "seed": 255,
+  "max_ids": 100,
+  "max_frames": 16,
+  "max_distractor_tracklets": 150,
+  "quality": "sharpness percentile rank",
+  "note": "degradations applied to the 128x256 encoder input; MARS-style protocol"
+}
