@@ -1,7 +1,7 @@
 # Reproducibility entry points. Run from the repo root.
 PY ?= python
 
-.PHONY: setup test synthetic mars errors clean
+.PHONY: setup test synthetic mars finetune errors clean
 
 setup:
 	$(PY) -m venv .venv && . .venv/bin/activate && pip install -r requirements.txt
@@ -16,6 +16,10 @@ synthetic:
 # Real MARS baseline. Usage: make mars ZIP="/path/to/bbox_test.zip" DEVICE=mps
 mars:
 	bash scripts/run_mars_baseline.sh "$(ZIP)" $(or $(DEVICE),mps)
+
+# OSNet fine-tuning on MARS train (needs torch + torchreid). Usage: make finetune TRAIN_ZIP=/path/bbox_train.zip DEVICE=mps
+finetune:
+	$(PY) scripts/finetune_osnet.py --zip "$(TRAIN_ZIP)" --out models/osnet_ft --device $(or $(DEVICE),mps)
 
 # Error taxonomy on extracted MARS embeddings.
 errors:
