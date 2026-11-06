@@ -1,0 +1,23 @@
+{
+  "zip": "/Users/nikhilkanaparthi/Downloads/MARS dataset/data/bbox_train.zip",
+  "out": "models/osnet_ft",
+  "device": "mps",
+  "model": "osnet_x1_0",
+  "epochs": 10,
+  "iters": 150,
+  "p": 16,
+  "k": 4,
+  "lr": 0.0003,
+  "weight_decay": 0.0005,
+  "margin": 0.3,
+  "label_smooth": 0.1,
+  "max_ids": 625,
+  "max_frames": 8,
+  "val_fraction": 0.1,
+  "seed": 255,
+  "train_identities": 563,
+  "val_identities": 62,
+  "train_images": 59257,
+  "best_val_mAP": 0.8031055695075359,
+  "protocol": "val = held-out MARS-train identities; test identities never used"
+}

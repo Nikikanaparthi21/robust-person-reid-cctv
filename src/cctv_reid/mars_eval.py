@@ -76,7 +76,7 @@ def evaluate(features: np.ndarray, names: list[str], seed: int = 255, max_ids: i
             row["_val"], row["_test"] = (*row["_val"], None), (*row["_test"], None)
         (xv, yv, cv), (xt, yt, ct) = row.pop("_val"), row.pop("_test")
         for cm in ("dbscan", "agglomerative"):
-            thr, _ = clustering.tune_threshold(xv, yv, cm, grid=np.linspace(0.1, 0.9, 9),
+            thr, _ = clustering.tune_threshold(xv, yv, cm, grid=clustering.MARS_GRID,
                                                min_samples=min_samples, counts=cv)
             labels = clustering.cluster(xt, cm, thr, min_samples)
             if ct is not None:  # score tracklet-level clusters at frame level

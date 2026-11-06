@@ -2,7 +2,7 @@
 
 Usage:
   python scripts/error_analysis.py --features data/embeddings/mars_test.npy \
-      --names data/embeddings/mars_test_names.txt --pooling mean --out results/mars_osnet_frozen/errors
+      --names data/embeddings/mars_test_names.txt --pooling mean --out results/mars_resnet50_frozen/errors
 """
 
 import argparse

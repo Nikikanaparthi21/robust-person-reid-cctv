@@ -1,0 +1,7 @@
+{
+  "features": "data/embeddings/mars_test_osnet_ft.npy",
+  "seed": 255,
+  "max_ids": 100,
+  "max_frames": 16,
+  "protocol": "MARS-style (camera-1 queries), see mars_eval.py"
+}

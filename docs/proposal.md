@@ -19,7 +19,7 @@ The pipeline is:
 5. Cosine similarity with DBSCAN and hierarchical clustering.
 6. Retrieval results, representative galleries, and timestamps.
 
-Quantitative evaluation will use a public video person-ReID benchmark such as MARS or DukeMTMC-VideoReID, subject to access and licensing. An authorized CCTV clip will be used only for qualitative demonstration and will not be uploaded.
+Retrieval and identity-clustering evaluation uses MARS (a public video person-ReID benchmark). MARS has no multi-object-tracking labels, and DukeMTMC has been withdrawn, so tracking metrics (IDF1, ID switches) will use a separate labelled pedestrian tracking dataset chosen in issue #20; they are not reported on MARS. An authorized CCTV clip will be used only for qualitative demonstration and will not be uploaded.
 
 ## Experiments and evaluation
 

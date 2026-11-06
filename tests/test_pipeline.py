@@ -277,3 +277,28 @@ def test_error_analysis_taxonomy_on_mars_named_features():
         "identity_merge", "distractor_merge", "cross_camera_split", "mixed_split",
         "wrong_identity_top1", "distractor_top1"}
     assert "Error analysis" in error_analysis.to_markdown(res)
+
+
+# ---------- fine-tuning helpers (torch-free) ----------
+def test_split_identities_disjoint_and_deterministic():
+    from cctv_reid.finetune_utils import split_identities
+
+    pids = [p for p in range(1, 41) for _ in range(3)] + [0, 0, -1]
+    tr, va = split_identities(pids, 0.1, seed=255)
+    assert tr.isdisjoint(va) and len(va) == 4 and len(tr) == 36 and 0 not in tr | va
+    assert (tr, va) == split_identities(pids, 0.1, seed=255)
+
+
+def test_pk_batches_shape_and_small_identity_handling():
+    from collections import Counter
+
+    from cctv_reid.finetune_utils import pk_batches
+
+    labels = [0] * 10 + [1] * 2 + [2] * 10 + [3] * 10  # identity 1 has fewer than K images
+    batches = list(pk_batches(labels, p=4, k=3, n_batches=5, seed=1))
+    assert len(batches) == 5 and all(len(b) == 12 for b in batches)
+    for b in batches:
+        assert set(Counter(labels[i] for i in b).values()) == {3}
+    assert batches == list(pk_batches(labels, p=4, k=3, n_batches=5, seed=1))
+    with pytest.raises(ValueError):
+        list(pk_batches(labels, p=5, k=2, n_batches=1))

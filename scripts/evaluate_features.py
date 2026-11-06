@@ -2,7 +2,7 @@
 
 Usage:
   python scripts/evaluate_features.py --features data/embeddings/mars_test.npy \
-      --names data/embeddings/mars_test_names.txt --out results/mars_osnet_frozen
+      --names data/embeddings/mars_test_names.txt --out results/mars_resnet50_frozen
 """
 
 import argparse
