@@ -1,0 +1,83 @@
+"""Score the video pipeline against a hand-made ground-truth log (who was in which camera, when).
+
+Ground truth CSV columns: person, camera, start, end. `camera` must match the --video camera names; `start`/`end` are either
+clock times ("2026-11-06 09:01:15" / ISO) or HH:MM:SS from the start of that camera's video, the same convention as
+tracklets.csv. A tracklet takes the label of the person whose interval overlaps at least `min_overlap` of the tracklet;
+tracklets with no such person are "unlabeled" and act as distractors in the gallery.
+"""
+
+from __future__ import annotations
+
+from datetime import datetime
+
+import numpy as np
+
+from . import clustering, evaluation
+
+
+def parse_time(s: str) -> float:
+    """ISO / 'YYYY-MM-DD HH:MM:SS' -> epoch seconds (naive local); 'HH:MM:SS' or plain seconds -> seconds."""
+    s = str(s).strip()
+    try:
+        return float(s)
+    except ValueError:
+        pass
+    if ":" in s and "-" not in s[:5]:
+        parts = [float(x) for x in s.split(":")]
+        while len(parts) < 3:
+            parts.insert(0, 0.0)
+        return parts[0] * 3600 + parts[1] * 60 + parts[2]
+    return datetime.fromisoformat(s).timestamp()
+
+
+AMBIGUOUS = "?"
+
+
+def assign_labels(tracklets: list[dict], truth: list[dict], min_overlap: float = 0.5) -> list[str | None]:
+    """tracklets: dicts with camera, start, end (seconds, same convention as truth).
+
+    Returns the person, None (nobody in the log: a distractor), or AMBIGUOUS when two or more different people overlap
+    the tracklet by at least `min_overlap` (time alone cannot say which one it is; such tracklets are left out of scoring).
+    """
+    out = []
+    for t in tracklets:
+        dur = max(1e-6, t["end"] - t["start"])
+        ov: dict[str, float] = {}
+        for g in truth:
+            if g["camera"] == t["camera"]:
+                o = max(0.0, min(t["end"], g["end"]) - max(t["start"], g["start"])) / dur
+                ov[g["person"]] = max(ov.get(g["person"], 0.0), o)
+        good = [p for p, o in ov.items() if o >= min_overlap]
+        out.append(good[0] if len(good) == 1 else (AMBIGUOUS if len(good) > 1 else None))
+    return out
+
+
+def evaluate_video(tracklets: list[dict], feats: np.ndarray, truth: list[dict], threshold: float = 0.3,
+                   min_overlap: float = 0.5) -> dict:
+    all_labels = assign_labels(tracklets, truth, min_overlap)
+    keep = [i for i, lab in enumerate(all_labels) if lab != AMBIGUOUS]
+    n_ambiguous = len(all_labels) - len(keep)
+    tracklets = [tracklets[i] for i in keep]
+    feats = np.asarray(feats)[keep]
+    labels = [all_labels[i] for i in keep]
+    cams = np.array([t["camera_index"] for t in tracklets])
+    people = sorted({p for p in labels if p})
+    pid = np.array([people.index(p) + 1 if p else -(i + 1) for i, p in enumerate(labels)])  # unlabeled: unique negatives
+    cams_per = {}
+    for p, c in zip(pid, cams):
+        if p > 0:
+            cams_per.setdefault(int(p), set()).add(int(c))
+    q = np.array([i for i in range(len(pid)) if pid[i] > 0 and len(cams_per[int(pid[i])]) > 1])
+    out = {"n_tracklets": len(tracklets), "n_labeled": int((pid > 0).sum()), "n_people": len(people),
+           "n_unlabeled": int((pid < 0).sum()), "n_ambiguous": n_ambiguous, "n_queries": int(len(q))}
+    if len(q):
+        r = evaluation.retrieval_metrics(feats[q], pid[q], cams[q], feats, pid, cams)
+        out.update({"rank1": r["rank1"], "rank5": r["rank5"], "mAP": r["mAP"]})
+    lab = pid > 0
+    if lab.sum() > 1:
+        pred = clustering.cluster(np.asarray(feats)[lab], "agglomerative", threshold)
+        m = evaluation.cluster_metrics(pid[lab], pred)
+        out.update({"cluster_precision": m["precision"], "cluster_recall": m["recall"], "cluster_f1": m["f1"],
+                    "cluster_purity": m["purity"], "clusters_per_person": m["clusters_per_identity"]})
+    out["labels"] = all_labels
+    return out

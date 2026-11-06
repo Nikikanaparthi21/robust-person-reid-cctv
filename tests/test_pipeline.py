@@ -396,3 +396,32 @@ def test_video_pipeline_tracks_times_and_cross_camera_match(tmp_path):
 
     assert vp.format_clock(75) == "00:01:15"
     assert vp.format_clock(75, "2026-11-06T09:00:00") == "2026-11-06 09:01:15"
+
+
+# ---------- video evaluation against a ground-truth log ----------
+def test_video_eval_labels_and_metrics():
+    from cctv_reid import video_eval
+
+    assert video_eval.parse_time("00:01:15") == 75 and video_eval.parse_time("12.5") == 12.5
+    assert video_eval.parse_time("2026-11-06 09:01:15") - video_eval.parse_time("2026-11-06 09:00:00") == 75
+    truth = [{"person": "A", "camera": "X", "start": 0, "end": 10}, {"person": "A", "camera": "Y", "start": 20, "end": 30},
+             {"person": "B", "camera": "X", "start": 12, "end": 25}, {"person": "B", "camera": "Y", "start": 0, "end": 15}]
+    tr = [{"camera": "X", "camera_index": 1, "start": 1, "end": 9}, {"camera": "Y", "camera_index": 2, "start": 21, "end": 29},
+          {"camera": "X", "camera_index": 1, "start": 13, "end": 24}, {"camera": "Y", "camera_index": 2, "start": 1, "end": 14},
+          {"camera": "X", "camera_index": 1, "start": 40, "end": 50}]  # nobody there: unlabeled distractor
+    assert video_eval.assign_labels(tr, truth) == ["A", "A", "B", "B", None]
+    feats = np.array([[1, 0, 0], [0.95, 0.05, 0], [0, 1, 0], [0.05, 0.95, 0], [0.5, 0.5, 0.7]], float)
+    res = video_eval.evaluate_video(tr, feats, truth, threshold=0.3)
+    assert res["n_people"] == 2 and res["n_unlabeled"] == 1 and res["n_queries"] == 4
+    assert res["rank1"] == 1.0 and res["mAP"] == 1.0 and res["cluster_f1"] == 1.0
+
+
+def test_video_eval_ambiguous_tracklets_are_excluded():
+    from cctv_reid import video_eval
+
+    truth = [{"person": "A", "camera": "X", "start": 0, "end": 10}, {"person": "B", "camera": "X", "start": 0, "end": 10},
+             {"person": "A", "camera": "Y", "start": 0, "end": 10}]
+    tr = [{"camera": "X", "camera_index": 1, "start": 1, "end": 9}, {"camera": "Y", "camera_index": 2, "start": 1, "end": 9}]
+    assert video_eval.assign_labels(tr, truth) == [video_eval.AMBIGUOUS, "A"]  # A and B both in camera X at that time
+    res = video_eval.evaluate_video(tr, np.eye(2), truth)
+    assert res["n_ambiguous"] == 1 and res["n_labeled"] == 1 and res["n_queries"] == 0

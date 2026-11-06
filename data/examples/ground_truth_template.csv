@@ -1,0 +1,5 @@
+person,camera,start,end
+PersonA,Entrance,2026-11-06 09:00:02,2026-11-06 09:00:20
+PersonA,Hallway,2026-11-06 09:00:25,2026-11-06 09:00:41
+PersonA,Garage,2026-11-06 09:00:50,2026-11-06 09:01:08
+PersonB,Entrance,2026-11-06 09:00:30,2026-11-06 09:00:47
