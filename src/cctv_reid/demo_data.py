@@ -90,3 +90,47 @@ def build(features: np.ndarray, names: list[str], n_queries: int = 12, top_k: in
                      "n_tracklets": len(keys), "has_time": times is not None,
                      "time_note": "" if times is not None else "MARS has no wall-clock time; showing camera and tracklet."},
             "queries": queries, "clusters": clusters[:40]}
+
+
+def build_from_tracklets(items: list[dict], feats: np.ndarray, top_k: int = 12, threshold: float = 0.3,
+                         max_queries: int = 300, model_note: str = "") -> dict:
+    """Viewer data for real video. `items[i]` describes tracklet i: key, camera (int index), camera_name, tracklet,
+    n_frames, start_s, end_s, time_label, thumbs (file names), video (relative path or None).
+    Every tracklet can be a query (longest first); no ground truth exists, so none is emitted.
+    """
+    feats = embeddings.l2_normalize(np.asarray(feats, dtype=np.float64))
+    labels = clustering.cluster(feats, "agglomerative", threshold) if len(feats) > 1 else np.zeros(len(feats), int)
+    cams = np.array([it["camera"] for it in items])
+    order = np.argsort([-it["n_frames"] for it in items], kind="stable")[:max_queries]
+    sims_all = np.einsum("ik,jk->ij", feats[order], feats) if len(order) else np.zeros((0, len(items)))
+
+    def card(i):
+        return {k: items[i].get(k) for k in ("key", "camera", "camera_name", "tracklet", "n_frames", "start_s", "end_s",
+                                              "time_label", "thumbs", "video")} | {"time_s": items[i].get("start_s")}
+
+    queries = []
+    for row, qi in enumerate(order):
+        sims = sims_all[row].copy()
+        sims[qi] = -np.inf
+        results = []
+        for rank, j in enumerate(np.argsort(-sims)[:top_k], 1):
+            if not np.isfinite(sims[j]):
+                break
+            results.append({**card(j), "rank": rank, "similarity": round(float(sims[j]), 4), "cluster": int(labels[j]),
+                            "same_cluster_as_query": bool(labels[j] == labels[qi]), "same_camera": bool(cams[j] == cams[qi]),
+                            "truth": None})
+        queries.append({**card(qi), "id": f"q{row + 1}", "cluster": int(labels[qi]), "results": results})
+    clusters = []
+    for c in np.unique(labels):
+        members = np.where(labels == c)[0]
+        if len(members) < 2 or len(set(cams[members])) < 2:
+            continue
+        centroid = embeddings.l2_normalize(feats[members].mean(axis=0))
+        clusters.append({"id": int(c), "size": int(len(members)), "cameras": sorted({int(x) for x in cams[members]}),
+                         "members": [{**card(j), "similarity_to_centroid": round(float(feats[j] @ centroid), 4)}
+                                     for j in members[np.argsort(-(feats[members] @ centroid))]]})
+    clusters.sort(key=lambda c: -c["size"])
+    return {"meta": {"disclaimer": DISCLAIMER, "model": model_note, "threshold": threshold, "n_tracklets": len(items),
+                     "has_time": True, "time_note": "", "has_truth": False, "synthetic": False,
+                     "camera_names": {int(it["camera"]): it["camera_name"] for it in items}},
+            "queries": queries, "clusters": clusters[:40]}

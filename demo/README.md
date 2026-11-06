@@ -30,3 +30,22 @@ labelled benchmark and is meant for evaluation, not for the reviewer.
   `demo_data.build(..., times=...)`; the manifest in `docs/tracklet_manifest.md` already stores `timestamp_seconds`.
 - Candidates are the top-k by similarity, not confirmed matches. A high score can still be a different person.
 - Use only public benchmark data or footage you are authorized to review. The tool does not name or identify anyone.
+
+## Run it on real video (the theft-review workflow)
+```bash
+pip install torch torchvision torchreid opencv-python-headless pillow
+python scripts/run_video_pipeline.py \
+  --video "Entrance=/path/entrance.mp4@2026-11-06T09:00:00" "Aisle 2=/path/aisle2.mp4@2026-11-06T09:00:07" \
+  --weights models/osnet_ft/best.pth --device mps --out demo/data
+open demo/index.html
+```
+One `--video` per camera as `CameraName=path[@real start time of the first frame]`. Steps: sample about 5 frames per second,
+detect people (COCO Faster R-CNN), track them into tracklets, embed with the fine-tuned OSNet, pool per tracklet, rank every
+tracklet against every other, cluster across cameras. The viewer then shows camera name, clock time range and a **Play clip**
+button that plays that tracklet's segment from the original video. Outputs: `demo/data/data.js`, `tracklets.csv`
+(manifest with start/end times), `tracklet_embeddings.npy`, thumbnails; videos are symlinked, nothing is uploaded anywhere.
+Tune `--det-score`, `--min-hits` and `--threshold` if people are missed or fragmented. Without a start time the page shows
+time from the start of each video.
+
+Tested here with synthetic video and a stand-in detector/encoder (tracking, timestamps, cross-camera ranking, viewer).
+Not yet run with the real detector and OSNet on real footage.

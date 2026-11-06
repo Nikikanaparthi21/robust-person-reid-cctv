@@ -35,7 +35,7 @@ main{max-width:1200px;margin:0 auto;padding:14px 16px 40px;display:grid;grid-tem
 .truth{font-size:12px;font-weight:600}.truth.same{color:var(--ok)}.truth.different,.truth.distractor{color:var(--bad)}
 .cov{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
 button.primary{background:var(--accent);color:#fff;border:0;border-radius:6px;padding:6px 12px;cursor:pointer;font:inherit}
-.cl{margin-bottom:10px}.cl .strip{flex-wrap:wrap}
+.clip video{border-radius:6px;background:#000}.cl{margin-bottom:10px}.cl .strip{flex-wrap:wrap}
 </style>
 </head>
 <body>
@@ -66,21 +66,21 @@ function thumb(name,key,size=""){
   const img=$("img",{class:"thumb "+size,src:base+"thumbs/"+name,alt:"frame from tracklet "+key,loading:"lazy"});
   img.addEventListener("error",()=>img.replaceWith(ph()));return img}
 const strip=(t,key,size)=>$("div",{class:"strip"},t.map(n=>thumb(n,key,size)));
-const timeText=t=>t==null?"no clock time in this dataset":new Date(t*1000).toISOString().substr(11,8);
-function camBadge(c){const b=$("span",{class:"cam"},"Camera "+c);b.style.setProperty("--c",camColor(c));return b}
+const timeText=(t,label)=>label||(t==null?"no clock time in this dataset":new Date(t*1000).toISOString().substr(11,8));
+function camBadge(c,name){const b=$("span",{class:"cam"},name||(D&&D.meta.camera_names&&D.meta.camera_names[c])||("Camera "+c));b.style.setProperty("--c",camColor(c));return b}
 
 function renderFind(){
   const main=document.getElementById("main");main.replaceChildren();
   const side=$("nav",{class:"side","aria-label":"Query people"});
   D.queries.forEach((q,i)=>side.append($("button",{class:"qbtn","aria-pressed":i===state.q,onclick:()=>{state.q=i;state.cams=new Set();renderFind()}},
-    thumb(q.thumbs[0],q.key,"sm"),$("span",{},$("b",{},"Person "+(i+1)),$("small",{},"Camera "+q.camera+" · "+q.n_frames+" frames")))));
+    thumb(q.thumbs[0],q.key,"sm"),$("span",{},$("b",{},(q.label||"Person "+(i+1))),$("small",{},(q.camera_name||("Camera "+q.camera))+" · "+q.n_frames+" frames")))));
   const q=D.queries[state.q];
   const allCams=[...new Set(q.results.map(r=>r.camera))].sort((a,b)=>a-b);
   const shown=q.results.filter(r=>r.similarity>=state.minSim&&(state.cams.size===0||state.cams.has(r.camera)));
   const panel=$("section",{class:"panel"});
   panel.append($("div",{class:"qhead"},strip(q.thumbs,q.key,"lg"),$("div",{},
-    $("h2",{},"Query: Person "+(state.q+1)),camBadge(q.camera),
-    $("p",{class:"muted"},"Tracklet "+q.tracklet+" · "+q.n_frames+" frames · "+timeText(q.time_s)))));
+    $("h2",{},"Query: Person "+(state.q+1)),camBadge(q.camera,q.camera_name),
+    $("p",{class:"muted"},"Tracklet "+q.tracklet+" · "+q.n_frames+" frames · "+timeText(q.time_s,q.time_label)))));
   const cov=$("div",{class:"cov","aria-label":"Candidate matches per camera"},$("span",{class:"muted"},"Candidates by camera:"),
     allCams.map(c=>{const n=q.results.filter(r=>r.camera===c).length;const b=camBadge(c);b.append(" · "+n);return b}));
   panel.append(cov);
@@ -89,7 +89,7 @@ function renderFind(){
   const controls=$("div",{class:"controls"},$("span",{},"Cameras:"),
     allCams.map(c=>$("button",{class:"chip","aria-pressed":state.cams.has(c),onclick:()=>{state.cams.has(c)?state.cams.delete(c):state.cams.add(c);renderFind()}},"C"+c)),
     $("label",{},"Min similarity ",slider," ",$("span",{id:"simv"},Math.round(state.minSim*100)+"%")),
-    $("label",{},$("input",{type:"checkbox",checked:state.reveal,onchange:e=>{state.reveal=e.target.checked;renderResults()}})," Reveal benchmark ground truth"),
+    D.meta.has_truth===false?"":$("label",{},$("input",{type:"checkbox",checked:state.reveal,onchange:e=>{state.reveal=e.target.checked;renderResults()}})," Reveal benchmark ground truth"),
     $("button",{class:"primary",onclick:exportCsv},"Export review (CSV)"));
   panel.append(controls);
   const results=$("div",{class:"grid",id:"results","aria-live":"polite"});panel.append(results);
@@ -102,19 +102,25 @@ function renderResults(){
   shown.forEach(r=>{
     const id=q.key+"|"+r.key,dec=reviews[id];
     const card=$("article",{class:"res"},
-      $("div",{class:"row"},$("b",{},"#"+r.rank),camBadge(r.camera),r.same_cluster_as_query?$("span",{class:"tag"},"same cluster as query"):""),
+      $("div",{class:"row"},$("b",{},"#"+r.rank),camBadge(r.camera,r.camera_name),r.same_cluster_as_query?$("span",{class:"tag"},"same cluster as query"):""),
       strip(r.thumbs,r.key),
       $("div",{class:"row"},$("div",{class:"bar",role:"img","aria-label":"similarity "+Math.round(r.similarity*100)+" percent"},$("i",{style:`width:${Math.max(0,Math.min(1,r.similarity))*100}%`})),$("b",{},Math.round(r.similarity*100)+"%")),
-      $("div",{class:"muted"},"Tracklet "+r.tracklet+" · "+r.n_frames+" frames · "+timeText(r.time_s)),
-      state.reveal?$("div",{class:"truth "+r.truth},r.truth==="same"?"Ground truth: same person":r.truth==="distractor"?"Ground truth: distractor/background":"Ground truth: different person"):"",
+      $("div",{class:"muted"},"Tracklet "+r.tracklet+" · "+r.n_frames+" frames · "+timeText(r.time_s,r.time_label)),
+      r.video?clipBox(r):"",
+      state.reveal&&r.truth?$("div",{class:"truth "+r.truth},r.truth==="same"?"Ground truth: same person":r.truth==="distractor"?"Ground truth: distractor/background":"Ground truth: different person"):"",
       $("div",{class:"dec"},
         $("button",{class:"yes","aria-pressed":dec==="match",onclick:()=>{reviews[id]=dec==="match"?undefined:"match";save();renderResults()}},"Possible match"),
         $("button",{class:"no","aria-pressed":dec==="no",onclick:()=>{reviews[id]=dec==="no"?undefined:"no";save();renderResults()}},"Not a match")));
     box.append(card)});
 }
+function clipBox(r){
+  const box=$("div",{class:"clip"});
+  const btn=$("button",{class:"chip",onclick:()=>{const v=$("video",{controls:true,autoplay:true,width:"100%",src:base+r.video+"#t="+Math.max(0,r.start_s-1).toFixed(1)+","+(r.end_s+1).toFixed(1)});
+    v.addEventListener("timeupdate",()=>{if(v.currentTime>r.end_s+1)v.pause()});box.replaceChildren(v)}},"Play clip");
+  box.append(btn);return box}
 function exportCsv(){
-  const rows=[["query_key","result_key","camera","tracklet","similarity","reviewer_decision"]];
-  D.queries.forEach(q=>q.results.forEach(r=>{const d=reviews[q.key+"|"+r.key];if(d)rows.push([q.key,r.key,r.camera,r.tracklet,r.similarity,d])}));
+  const rows=[["query_key","result_key","camera","camera_name","tracklet","time","similarity","reviewer_decision"]];
+  D.queries.forEach(q=>q.results.forEach(r=>{const d=reviews[q.key+"|"+r.key];if(d)rows.push([q.key,r.key,r.camera,r.camera_name||"",r.tracklet,r.time_label||"",r.similarity,d])}));
   const blob=new Blob([rows.map(r=>r.join(",")).join("\n")],{type:"text/csv"});
   const a=$("a",{href:URL.createObjectURL(blob),download:"review_decisions.csv"});document.body.append(a);a.click();a.remove();
 }
@@ -124,7 +130,7 @@ function renderClusters(){
     $("p",{class:"muted"},"Tracklets grouped automatically (agglomerative clustering, distance threshold "+D.meta.threshold+"). Each cluster is a hypothesis that the tracklets show one person."));
   D.clusters.slice(0,20).forEach(c=>{
     const row=$("div",{class:"cl panel"},$("div",{class:"row"},$("b",{},"Cluster "+c.id),$("span",{class:"tag"},c.size+" tracklets"),c.cameras.map(camBadge)),
-      $("div",{class:"strip"},c.members.slice(0,10).map(m=>$("div",{},thumb(m.thumbs[0],m.key,"sm"),$("div",{class:"muted"},"C"+m.camera+" · T"+m.tracklet)))));
+      $("div",{class:"strip"},c.members.slice(0,10).map(m=>$("div",{},thumb(m.thumbs[0],m.key,"sm"),$("div",{class:"muted"},"C"+(m.camera_name||("C"+m.camera))+" · T"+m.tracklet)))));
     panel.append(row)});
   main.append(panel);
 }
