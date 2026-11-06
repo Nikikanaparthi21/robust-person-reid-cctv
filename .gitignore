@@ -27,3 +27,6 @@ results/generated/
 # Notebook and OS files
 .ipynb_checkpoints/
 .DS_Store
+
+# Review viewer: thumbnails cut from MARS must not be committed
+demo/data/
