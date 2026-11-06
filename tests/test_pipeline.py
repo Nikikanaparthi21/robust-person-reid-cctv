@@ -302,3 +302,126 @@ def test_pk_batches_shape_and_small_identity_handling():
     assert batches == list(pk_batches(labels, p=4, k=3, n_batches=5, seed=1))
     with pytest.raises(ValueError):
         list(pk_batches(labels, p=5, k=2, n_batches=1))
+
+
+# ---------- review viewer data ----------
+def test_demo_data_structure_and_no_invented_times():
+    from cctv_reid import demo_data
+
+    cfg = synthetic.SynthConfig(n_ids=15, n_cams=3, tracklets_per_cam=1, min_frames=5, max_frames=6)
+    ds = synthetic.make_dataset(cfg, np.random.default_rng(3))
+    names, counter = [], {}
+    for pid, cam in zip(ds["ids"], ds["cams"]):
+        counter[(pid, cam)] = counter.get((pid, cam), 0) + 1
+        names.append(f"{pid + 1:04d}C{cam + 1}T0001F{counter[(pid, cam)]:03d}.jpg")
+    out = demo_data.build(ds["frames"], names, n_queries=4, top_k=5, threshold=0.5)
+    assert out["meta"]["has_time"] is False and out["meta"]["disclaimer"]
+    assert len(out["queries"]) == 4
+    for q in out["queries"]:
+        sims = [r["similarity"] for r in q["results"]]
+        assert sims == sorted(sims, reverse=True) and len(q["results"]) <= 5
+        assert all(r["time_s"] is None and r["key"] != q["key"] for r in q["results"])
+        assert all(r["truth"] in ("same", "different", "distractor") for r in q["results"])
+        assert len(q["thumbs"]) >= 1
+    assert all(len(c["cameras"]) >= 2 for c in out["clusters"])
+    key = out["queries"][0]["key"]
+    timed = demo_data.build(ds["frames"], names, n_queries=1, top_k=3, times={key: 12.5})
+    assert timed["meta"]["has_time"] is True
+
+
+# ---------- video pipeline (fake detector and encoder on synthetic video) ----------
+def _write_video(path, spans, n_frames=60, fps=10, size=(320, 240)):
+    """spans: list of (color_bgr, first_frame, last_frame, x0, y). A 40x110 rectangle walks right 4 px/frame."""
+    import cv2
+
+    vw = cv2.VideoWriter(str(path), cv2.VideoWriter_fourcc(*"mp4v"), fps, size)
+    boxes = []
+    for f in range(n_frames):
+        img = np.full((size[1], size[0], 3), 30, np.uint8)
+        fb = []
+        for color, a, b, x0, y in spans:
+            if a <= f <= b:
+                x = x0 + 4 * (f - a)
+                img[y:y + 110, x:x + 40] = color
+                fb.append((x, y, x + 40, y + 110))
+        boxes.append(fb)
+        vw.write(img)
+    vw.release()
+    return boxes
+
+
+class _FakeDetector:
+    def __init__(self, boxes):
+        self.boxes, self.i = boxes, 0
+
+    def __call__(self, images):
+        out = []
+        for _ in images:
+            fb = self.boxes[self.i]
+            self.i += 1
+            out.append((np.array(fb, float).reshape(-1, 4), np.full(len(fb), 0.9)))
+        return out
+
+
+class _ColorEncoder:
+    def encode(self, batch):
+        m = batch.reshape(len(batch), -1, 3).mean(axis=1)  # mean RGB of the crop
+        return np.concatenate([m, np.ones((len(m), 5)) * 1e-3], axis=1).astype("float32")
+
+
+def test_video_pipeline_tracks_times_and_cross_camera_match(tmp_path):
+    from cctv_reid import demo_data, video_pipeline as vp
+
+    RED, BLUE = (0, 0, 255), (255, 0, 0)  # BGR
+    a_boxes = _write_video(tmp_path / "a.mp4", [(RED, 0, 59, 10, 40), (BLUE, 20, 59, 200, 100)])
+    b_boxes = _write_video(tmp_path / "b.mp4", [(RED, 10, 49, 20, 60), (BLUE, 55, 56, 150, 30)])  # blue blip: 2 frames
+    ta = vp.process_video(str(tmp_path / "a.mp4"), "A", _FakeDetector(a_boxes), every_n=1, min_hits=5)
+    tb = vp.process_video(str(tmp_path / "b.mp4"), "B", _FakeDetector(b_boxes), every_n=1, min_hits=5)
+    assert (len(ta), len(tb)) == (2, 1)  # short blip dropped by min_hits
+    red_a = max(ta, key=lambda t: len(t.frame_idx))
+    assert abs(red_a.start_s - 0.0) < 1e-6 and abs(red_a.end_s - 5.9) < 1e-6
+    assert abs(tb[0].start_s - 1.0) < 1e-6 and abs(tb[0].end_s - 4.9) < 1e-6
+    assert all(c.shape == (256, 128, 3) for t in ta + tb for c in t.crops)
+
+    tls = ta + tb
+    keys, feats = vp.embed_tracklets(tls, _ColorEncoder())
+    items = [{"key": t.tid, "camera": 1 if t.camera == "A" else 2, "camera_name": t.camera, "tracklet": t.track_id,
+              "n_frames": len(t.frame_idx), "start_s": t.start_s, "end_s": t.end_s, "time_label": "",
+              "thumbs": [], "video": None} for t in tls]
+    order = {k: i for i, k in enumerate(keys)}
+    data = demo_data.build_from_tracklets(items, feats[[order[i["key"]] for i in items]], top_k=3)
+    q = next(q for q in data["queries"] if q["key"] == red_a.tid)
+    assert q["results"][0]["camera_name"] == "B" and q["results"][0]["similarity"] > 0.99  # red in B is the top match
+    assert q["results"][0]["truth"] is None and data["meta"]["has_truth"] is False
+
+    assert vp.format_clock(75) == "00:01:15"
+    assert vp.format_clock(75, "2026-11-06T09:00:00") == "2026-11-06 09:01:15"
+
+
+# ---------- video evaluation against a ground-truth log ----------
+def test_video_eval_labels_and_metrics():
+    from cctv_reid import video_eval
+
+    assert video_eval.parse_time("00:01:15") == 75 and video_eval.parse_time("12.5") == 12.5
+    assert video_eval.parse_time("2026-11-06 09:01:15") - video_eval.parse_time("2026-11-06 09:00:00") == 75
+    truth = [{"person": "A", "camera": "X", "start": 0, "end": 10}, {"person": "A", "camera": "Y", "start": 20, "end": 30},
+             {"person": "B", "camera": "X", "start": 12, "end": 25}, {"person": "B", "camera": "Y", "start": 0, "end": 15}]
+    tr = [{"camera": "X", "camera_index": 1, "start": 1, "end": 9}, {"camera": "Y", "camera_index": 2, "start": 21, "end": 29},
+          {"camera": "X", "camera_index": 1, "start": 13, "end": 24}, {"camera": "Y", "camera_index": 2, "start": 1, "end": 14},
+          {"camera": "X", "camera_index": 1, "start": 40, "end": 50}]  # nobody there: unlabeled distractor
+    assert video_eval.assign_labels(tr, truth) == ["A", "A", "B", "B", None]
+    feats = np.array([[1, 0, 0], [0.95, 0.05, 0], [0, 1, 0], [0.05, 0.95, 0], [0.5, 0.5, 0.7]], float)
+    res = video_eval.evaluate_video(tr, feats, truth, threshold=0.3)
+    assert res["n_people"] == 2 and res["n_unlabeled"] == 1 and res["n_queries"] == 4
+    assert res["rank1"] == 1.0 and res["mAP"] == 1.0 and res["cluster_f1"] == 1.0
+
+
+def test_video_eval_ambiguous_tracklets_are_excluded():
+    from cctv_reid import video_eval
+
+    truth = [{"person": "A", "camera": "X", "start": 0, "end": 10}, {"person": "B", "camera": "X", "start": 0, "end": 10},
+             {"person": "A", "camera": "Y", "start": 0, "end": 10}]
+    tr = [{"camera": "X", "camera_index": 1, "start": 1, "end": 9}, {"camera": "Y", "camera_index": 2, "start": 1, "end": 9}]
+    assert video_eval.assign_labels(tr, truth) == [video_eval.AMBIGUOUS, "A"]  # A and B both in camera X at that time
+    res = video_eval.evaluate_video(tr, np.eye(2), truth)
+    assert res["n_ambiguous"] == 1 and res["n_labeled"] == 1 and res["n_queries"] == 0

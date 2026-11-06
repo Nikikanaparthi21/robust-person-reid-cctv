@@ -1,7 +1,7 @@
 # Reproducibility entry points. Run from the repo root.
 PY ?= python
 
-.PHONY: setup test synthetic mars finetune errors clean
+.PHONY: setup test synthetic mars finetune demo video errors clean
 
 setup:
 	$(PY) -m venv .venv && . .venv/bin/activate && pip install -r requirements.txt
@@ -20,6 +20,14 @@ mars:
 # OSNet fine-tuning on MARS train (needs torch + torchreid). Usage: make finetune TRAIN_ZIP=/path/bbox_train.zip DEVICE=mps
 finetune:
 	$(PY) scripts/finetune_osnet.py --zip "$(TRAIN_ZIP)" --out models/osnet_ft --device $(or $(DEVICE),mps)
+
+# Review viewer data from the fine-tuned embeddings (thumbnails need the MARS zip). Usage: make demo ZIP=/path/bbox_test.zip
+demo:
+	$(PY) scripts/build_demo.py --features data/embeddings/mars_test_osnet_ft.npy --names data/embeddings/mars_test_osnet_ft_names.txt --zip "$(ZIP)" --out demo/data
+
+# Real-video pipeline. Usage: make video VIDEOS='"Entrance=/p/a.mp4@2026-11-06T09:00:00" "Aisle=/p/b.mp4"' DEVICE=mps
+video:
+	$(PY) scripts/run_video_pipeline.py --video $(VIDEOS) --weights models/osnet_ft/best.pth --device $(or $(DEVICE),mps) --out demo/data
 
 # Error taxonomy on extracted MARS embeddings.
 errors:

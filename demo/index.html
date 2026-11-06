@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Person Re-ID Review Viewer</title>
+<style>
+:root{--bg:#f6f7f9;--card:#fff;--ink:#17202a;--muted:#5d6b7a;--line:#dde2e8;--accent:#1f5fbf;--ok:#1a7f4b;--bad:#b3261e;--warn:#8a5a00;--warnbg:#fff4d6;--track:#e7ebf0}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#10151b;--card:#18202a;--ink:#e8edf2;--muted:#9aa8b6;--line:#2a3541;--accent:#6aa3ff;--ok:#4cc38a;--bad:#ff8a80;--warn:#f0c36a;--warnbg:#2b2411;--track:#27313c}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+header{padding:14px 16px 0;max-width:1200px;margin:0 auto}h1{font-size:20px;margin:0 0 2px}.sub{color:var(--muted);margin:0 0 10px}
+.banner{background:var(--warnbg);color:var(--warn);border:1px solid var(--line);border-radius:8px;padding:8px 12px;margin:0 0 10px;font-size:13px}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line)}.tab{border:0;background:none;color:var(--muted);padding:9px 14px;cursor:pointer;font:inherit;border-bottom:2px solid transparent}
+.tab[aria-selected=true]{color:var(--ink);border-color:var(--accent);font-weight:600}
+main{max-width:1200px;margin:0 auto;padding:14px 16px 40px;display:grid;grid-template-columns:230px 1fr;gap:16px}
+@media(max-width:760px){main{grid-template-columns:1fr}}
+.side{display:flex;flex-direction:column;gap:8px;max-height:78vh;overflow:auto}
+.qbtn{display:flex;gap:8px;align-items:center;text-align:left;border:1px solid var(--line);background:var(--card);color:inherit;border-radius:8px;padding:6px;cursor:pointer;font:inherit}
+.qbtn[aria-pressed=true]{outline:2px solid var(--accent)}.qbtn small{color:var(--muted);display:block}
+.thumb{width:48px;height:96px;border-radius:5px;background:var(--track);object-fit:cover;flex:none;display:block}.thumb.sm{width:40px;height:80px}.thumb.lg{width:72px;height:144px}
+.ph{display:inline-flex;align-items:flex-end;justify-content:center;overflow:hidden}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px}
+.qhead{display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap}.qhead h2{margin:0 0 4px;font-size:17px}
+.controls{display:flex;gap:14px;flex-wrap:wrap;align-items:center;margin:12px 0;font-size:13px}
+.chip{border:1px solid var(--line);background:var(--card);color:inherit;border-radius:999px;padding:3px 10px;cursor:pointer;font:inherit;font-size:13px}
+.chip[aria-pressed=true]{background:var(--accent);color:#fff;border-color:var(--accent)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
+.res{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:8px}
+.row{display:flex;gap:6px;align-items:center;flex-wrap:wrap}.strip{display:flex;gap:4px}
+.cam{font-weight:700;font-size:12px;padding:2px 8px;border-radius:6px;background:var(--track);border-left:5px solid var(--c)}
+.bar{height:8px;background:var(--track);border-radius:4px;overflow:hidden;flex:1;min-width:60px}.bar>i{display:block;height:100%;background:var(--accent)}
+.muted{color:var(--muted);font-size:12px}.tag{font-size:11px;border:1px solid var(--line);border-radius:5px;padding:1px 6px;color:var(--muted)}
+.dec{display:flex;gap:6px}.dec button{flex:1;border:1px solid var(--line);background:var(--card);color:inherit;border-radius:6px;padding:5px;cursor:pointer;font:inherit;font-size:13px}
+.dec button[aria-pressed=true].yes{background:var(--ok);color:#fff;border-color:var(--ok)}.dec button[aria-pressed=true].no{background:var(--bad);color:#fff;border-color:var(--bad)}
+.truth{font-size:12px;font-weight:600}.truth.same{color:var(--ok)}.truth.different,.truth.distractor{color:var(--bad)}
+.cov{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
+button.primary{background:var(--accent);color:#fff;border:0;border-radius:6px;padding:6px 12px;cursor:pointer;font:inherit}
+.clip video{border-radius:6px;background:#000}.cl{margin-bottom:10px}.cl .strip{flex-wrap:wrap}
+</style>
+</head>
+<body>
+<header>
+  <h1>Person Re-ID Review Viewer</h1>
+  <p class="sub">Pick a person, see other appearances across cameras, and mark each as a possible match or not.</p>
+  <div class="banner" id="disclaimer"></div>
+  <div class="banner" id="sampleBanner" hidden></div>
+  <div class="tabs" role="tablist">
+    <button class="tab" role="tab" id="tabFind" aria-selected="true">Find a person</button>
+    <button class="tab" role="tab" id="tabClusters" aria-selected="false">Identity clusters</button>
+  </div>
+</header>
+<main id="main"></main>
+<script>
+const CAM_COLORS=["#1f77b4","#e08a00","#2a9d5c","#c2417a","#7a5fc0","#00899b","#8c6d31","#d1495b"];
+const camColor=c=>CAM_COLORS[(c-1)%CAM_COLORS.length];
+let D=null,base="data/",state={q:0,cams:new Set(),minSim:0,reveal:false,tab:"find"};
+const KEY="reid-review-v1";
+let reviews={};try{reviews=JSON.parse(localStorage.getItem(KEY)||"{}")}catch(e){}
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(reviews))}catch(e){}};
+const $=(t,a={},...k)=>{const e=document.createElement(t);for(const[x,v]of Object.entries(a)){if(x==="class")e.className=v;else if(x.startsWith("on"))e.addEventListener(x.slice(2),v);else if(v===true)e.setAttribute(x,"");else if(v!==false&&v!=null)e.setAttribute(x,v)}for(const c of k.flat())e.append(c&&c.nodeType?c:document.createTextNode(c??""));return e};
+function hue(s){let h=0;for(const ch of s)h=(h*31+ch.charCodeAt(0))%360;return h}
+function thumb(name,key,size=""){
+  const ph=()=>{const w=$("span",{class:"thumb ph "+size,"aria-hidden":"true"});const hh=hue(key);
+    w.innerHTML=`<svg viewBox="0 0 24 48" width="70%" height="92%"><circle cx="12" cy="9" r="6" fill="hsl(${hh} 35% 55%)"/><rect x="5" y="17" width="14" height="20" rx="5" fill="hsl(${hh} 40% 45%)"/><rect x="6" y="36" width="5" height="12" fill="hsl(${hh} 30% 35%)"/><rect x="13" y="36" width="5" height="12" fill="hsl(${hh} 30% 35%)"/></svg>`;return w};
+  if(!name||(D&&D.meta.synthetic))return ph();
+  const img=$("img",{class:"thumb "+size,src:base+"thumbs/"+name,alt:"frame from tracklet "+key,loading:"lazy"});
+  img.addEventListener("error",()=>img.replaceWith(ph()));return img}
+const strip=(t,key,size)=>$("div",{class:"strip"},t.map(n=>thumb(n,key,size)));
+const timeText=(t,label)=>label||(t==null?"no clock time in this dataset":new Date(t*1000).toISOString().substr(11,8));
+function camBadge(c,name){const b=$("span",{class:"cam"},name||(D&&D.meta.camera_names&&D.meta.camera_names[c])||("Camera "+c));b.style.setProperty("--c",camColor(c));return b}
+
+function renderFind(){
+  const main=document.getElementById("main");main.replaceChildren();
+  const side=$("nav",{class:"side","aria-label":"Query people"});
+  D.queries.forEach((q,i)=>side.append($("button",{class:"qbtn","aria-pressed":i===state.q,onclick:()=>{state.q=i;state.cams=new Set();renderFind()}},
+    thumb(q.thumbs[0],q.key,"sm"),$("span",{},$("b",{},(q.label||"Person "+(i+1))),$("small",{},(q.camera_name||("Camera "+q.camera))+" · "+q.n_frames+" frames")))));
+  const q=D.queries[state.q];
+  const allCams=[...new Set(q.results.map(r=>r.camera))].sort((a,b)=>a-b);
+  const shown=q.results.filter(r=>r.similarity>=state.minSim&&(state.cams.size===0||state.cams.has(r.camera)));
+  const panel=$("section",{class:"panel"});
+  panel.append($("div",{class:"qhead"},strip(q.thumbs,q.key,"lg"),$("div",{},
+    $("h2",{},"Query: Person "+(state.q+1)),camBadge(q.camera,q.camera_name),
+    $("p",{class:"muted"},"Tracklet "+q.tracklet+" · "+q.n_frames+" frames · "+timeText(q.time_s,q.time_label)))));
+  const cov=$("div",{class:"cov","aria-label":"Candidate matches per camera"},$("span",{class:"muted"},"Candidates by camera:"),
+    allCams.map(c=>{const n=q.results.filter(r=>r.camera===c).length;const b=camBadge(c);b.append(" · "+n);return b}));
+  panel.append(cov);
+  const slider=$("input",{type:"range",min:"0",max:"100",value:String(Math.round(state.minSim*100)),"aria-label":"Minimum similarity",
+    oninput:e=>{state.minSim=e.target.value/100;document.getElementById("simv").textContent=Math.round(state.minSim*100)+"%";renderResults()}});
+  const controls=$("div",{class:"controls"},$("span",{},"Cameras:"),
+    allCams.map(c=>$("button",{class:"chip","aria-pressed":state.cams.has(c),onclick:()=>{state.cams.has(c)?state.cams.delete(c):state.cams.add(c);renderFind()}},"C"+c)),
+    $("label",{},"Min similarity ",slider," ",$("span",{id:"simv"},Math.round(state.minSim*100)+"%")),
+    D.meta.has_truth===false?"":$("label",{},$("input",{type:"checkbox",checked:state.reveal,onchange:e=>{state.reveal=e.target.checked;renderResults()}})," Reveal benchmark ground truth"),
+    $("button",{class:"primary",onclick:exportCsv},"Export review (CSV)"));
+  panel.append(controls);
+  const results=$("div",{class:"grid",id:"results","aria-live":"polite"});panel.append(results);
+  main.append(side,panel);renderResults();
+}
+function renderResults(){
+  const q=D.queries[state.q],box=document.getElementById("results");if(!box)return;box.replaceChildren();
+  const shown=q.results.filter(r=>r.similarity>=state.minSim&&(state.cams.size===0||state.cams.has(r.camera)));
+  if(!shown.length)box.append($("p",{class:"muted"},"No candidates match these filters."));
+  shown.forEach(r=>{
+    const id=q.key+"|"+r.key,dec=reviews[id];
+    const card=$("article",{class:"res"},
+      $("div",{class:"row"},$("b",{},"#"+r.rank),camBadge(r.camera,r.camera_name),r.same_cluster_as_query?$("span",{class:"tag"},"same cluster as query"):""),
+      strip(r.thumbs,r.key),
+      $("div",{class:"row"},$("div",{class:"bar",role:"img","aria-label":"similarity "+Math.round(r.similarity*100)+" percent"},$("i",{style:`width:${Math.max(0,Math.min(1,r.similarity))*100}%`})),$("b",{},Math.round(r.similarity*100)+"%")),
+      $("div",{class:"muted"},"Tracklet "+r.tracklet+" · "+r.n_frames+" frames · "+timeText(r.time_s,r.time_label)),
+      r.video?clipBox(r):"",
+      state.reveal&&r.truth?$("div",{class:"truth "+r.truth},r.truth==="same"?"Ground truth: same person":r.truth==="distractor"?"Ground truth: distractor/background":"Ground truth: different person"):"",
+      $("div",{class:"dec"},
+        $("button",{class:"yes","aria-pressed":dec==="match",onclick:()=>{reviews[id]=dec==="match"?undefined:"match";save();renderResults()}},"Possible match"),
+        $("button",{class:"no","aria-pressed":dec==="no",onclick:()=>{reviews[id]=dec==="no"?undefined:"no";save();renderResults()}},"Not a match")));
+    box.append(card)});
+}
+function clipBox(r){
+  const box=$("div",{class:"clip"});
+  const btn=$("button",{class:"chip",onclick:()=>{const v=$("video",{controls:true,autoplay:true,width:"100%",src:base+r.video+"#t="+Math.max(0,r.start_s-1).toFixed(1)+","+(r.end_s+1).toFixed(1)});
+    v.addEventListener("timeupdate",()=>{if(v.currentTime>r.end_s+1)v.pause()});box.replaceChildren(v)}},"Play clip");
+  box.append(btn);return box}
+function exportCsv(){
+  const rows=[["query_key","result_key","camera","camera_name","tracklet","time","similarity","reviewer_decision"]];
+  D.queries.forEach(q=>q.results.forEach(r=>{const d=reviews[q.key+"|"+r.key];if(d)rows.push([q.key,r.key,r.camera,r.camera_name||"",r.tracklet,r.time_label||"",r.similarity,d])}));
+  const blob=new Blob([rows.map(r=>r.join(",")).join("\n")],{type:"text/csv"});
+  const a=$("a",{href:URL.createObjectURL(blob),download:"review_decisions.csv"});document.body.append(a);a.click();a.remove();
+}
+function renderClusters(){
+  const main=document.getElementById("main");main.replaceChildren();
+  const panel=$("section",{class:"panel",style:"grid-column:1/-1"},$("h2",{},"Identity clusters that span several cameras"),
+    $("p",{class:"muted"},"Tracklets grouped automatically (agglomerative clustering, distance threshold "+D.meta.threshold+"). Each cluster is a hypothesis that the tracklets show one person."));
+  D.clusters.slice(0,20).forEach(c=>{
+    const row=$("div",{class:"cl panel"},$("div",{class:"row"},$("b",{},"Cluster "+c.id),$("span",{class:"tag"},c.size+" tracklets"),c.cameras.map(camBadge)),
+      $("div",{class:"strip"},c.members.slice(0,10).map(m=>$("div",{},thumb(m.thumbs[0],m.key,"sm"),$("div",{class:"muted"},"C"+(m.camera_name||("C"+m.camera))+" · T"+m.tracklet)))));
+    panel.append(row)});
+  main.append(panel);
+}
+function show(tab){state.tab=tab;document.getElementById("tabFind").setAttribute("aria-selected",tab==="find");document.getElementById("tabClusters").setAttribute("aria-selected",tab==="clusters");tab==="find"?renderFind():renderClusters()}
+function boot(){
+  document.getElementById("disclaimer").textContent=D.meta.disclaimer+(D.meta.model?" Model: "+D.meta.model+".":"")+(D.meta.time_note?" "+D.meta.time_note:"");
+  if(D.meta.synthetic||base!=="data/"){const b=document.getElementById("sampleBanner");b.hidden=false;b.textContent="Showing synthetic sample data with placeholder figures. Build real data with scripts/build_demo.py (see demo/README.md)."}
+  document.getElementById("tabFind").onclick=()=>show("find");document.getElementById("tabClusters").onclick=()=>show("clusters");show("find")}
+function load(src,b,fail){const s=document.createElement("script");s.src=src;s.onload=()=>{D=window.DEMO_DATA;base=b;boot()};s.onerror=fail;document.head.append(s)}
+load("data/data.js","data/",()=>load("sample/data.js","sample/",()=>{document.getElementById("main").textContent="No data found. Run scripts/build_demo.py."}));
+</script>
+</body>
+</html>
