@@ -48,7 +48,7 @@ def analyze(features: np.ndarray, names: list[str], method: str = "mean", cluste
     ms = 2
 
     v = np.isin(tpid, list(val_ids))
-    thr, _ = clustering.tune_threshold(feats[v], tpid[v], cluster_method, grid=np.linspace(0.1, 0.9, 9),
+    thr, _ = clustering.tune_threshold(feats[v], tpid[v], cluster_method, grid=clustering.MARS_GRID,
                                        min_samples=ms, counts=n_frames[v])
     t = np.isin(tpid, list(test_ids) + [0])  # distractors present so false merges with them are visible
     labels = clustering.cluster(feats[t], cluster_method, thr, ms)

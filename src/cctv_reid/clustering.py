@@ -36,6 +36,11 @@ def relabel_noise(labels: np.ndarray) -> np.ndarray:
     return labels
 
 
+# Threshold search grid for MARS runs: the earlier 0.1-0.9 grid plus two smaller values, because frozen
+# OSNet picked 0.1 (the lower edge). It is a superset, so runs whose best threshold was interior are unchanged.
+MARS_GRID = np.concatenate([[0.02, 0.05], np.linspace(0.1, 0.9, 9)])
+
+
 def tune_threshold(embeddings: np.ndarray, true_ids: np.ndarray, method: str,
                    grid: np.ndarray | None = None, min_samples: int = 2,
                    counts: np.ndarray | None = None) -> tuple[float, float]:
