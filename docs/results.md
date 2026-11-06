@@ -25,3 +25,58 @@ MARS-style protocol, not the official MARS lists: 100-identity test subset (seed
 | frame     |    0.91  |    0.945 | 0.825 |       0.85  |       0.799 |                  3.64 |
 | mean      |    0.945 |    0.972 | 0.914 |       0.924 |       0.922 |                  1.58 |
 | attention |    0.945 |    0.972 | 0.914 |       0.917 |       0.913 |                  1.62 |
+
+## Robustness: fine-tuned OSNet
+
+Degradations are applied to the 128x256 encoder input (blur sigma, brightness factor, down-sampling factor, occluding band as a fraction of height placed at a random offset in each frame independently). `sample_every_n` keeps every n-th of the <=16 frames per tracklet. Clustering thresholds are re-tuned on the validation half under each condition.
+
+### mAP
+
+| Condition      |   frame |   mean |   attention |   quality_filtered |   quality_weighted |
+|:---------------|--------:|-------:|------------:|-------------------:|-------------------:|
+| clean          |   0.825 |  0.914 |       0.914 |              0.909 |              0.907 |
+| blur_s2        |   0.772 |  0.881 |       0.883 |              0.869 |              0.866 |
+| blur_s4        |   0.622 |  0.781 |       0.784 |              0.774 |              0.773 |
+| dark_0.5       |   0.759 |  0.878 |       0.883 |              0.873 |              0.872 |
+| dark_0.25      |   0.574 |  0.725 |       0.734 |              0.725 |              0.724 |
+| lowres_0.5     |   0.826 |  0.91  |       0.912 |              0.902 |              0.901 |
+| lowres_0.25    |   0.739 |  0.86  |       0.864 |              0.848 |              0.846 |
+| occl_0.25      |   0.663 |  0.912 |       0.911 |              0.895 |              0.9   |
+| occl_0.5       |   0.331 |  0.789 |       0.698 |              0.713 |              0.747 |
+| sample_every_2 |   0.823 |  0.911 |       0.91  |              0.906 |              0.907 |
+| sample_every_4 |   0.814 |  0.9   |       0.9   |              0.883 |              0.897 |
+| sample_every_8 |   0.812 |  0.876 |       0.876 |              0.825 |              0.873 |
+
+### Rank-1
+
+| Condition      |   frame |   mean |   attention |   quality_filtered |   quality_weighted |
+|:---------------|--------:|-------:|------------:|-------------------:|-------------------:|
+| clean          |   0.91  |  0.945 |       0.945 |              0.952 |              0.945 |
+| blur_s2        |   0.903 |  0.924 |       0.917 |              0.924 |              0.903 |
+| blur_s4        |   0.834 |  0.855 |       0.855 |              0.883 |              0.855 |
+| dark_0.5       |   0.876 |  0.917 |       0.931 |              0.931 |              0.931 |
+| dark_0.25      |   0.786 |  0.828 |       0.848 |              0.828 |              0.834 |
+| lowres_0.5     |   0.938 |  0.945 |       0.945 |              0.952 |              0.938 |
+| lowres_0.25    |   0.876 |  0.938 |       0.945 |              0.917 |              0.917 |
+| occl_0.25      |   0.876 |  0.938 |       0.938 |              0.959 |              0.931 |
+| occl_0.5       |   0.731 |  0.883 |       0.841 |              0.862 |              0.862 |
+| sample_every_2 |   0.917 |  0.952 |       0.952 |              0.952 |              0.952 |
+| sample_every_4 |   0.883 |  0.945 |       0.945 |              0.924 |              0.945 |
+| sample_every_8 |   0.89  |  0.931 |       0.931 |              0.89  |              0.931 |
+
+### Agglomerative F1 (frame-level)
+
+| Condition      |   frame |   mean |   attention |   quality_filtered |   quality_weighted |
+|:---------------|--------:|-------:|------------:|-------------------:|-------------------:|
+| clean          |   0.799 |  0.922 |       0.913 |              0.869 |              0.922 |
+| blur_s2        |   0.869 |  0.927 |       0.925 |              0.902 |              0.907 |
+| blur_s4        |   0.696 |  0.638 |       0.624 |              0.814 |              0.614 |
+| dark_0.5       |   0.812 |  0.896 |       0.883 |              0.875 |              0.881 |
+| dark_0.25      |   0.629 |  0.717 |       0.659 |              0.599 |              0.668 |
+| lowres_0.5     |   0.851 |  0.905 |       0.902 |              0.867 |              0.897 |
+| lowres_0.25    |   0.835 |  0.834 |       0.833 |              0.845 |              0.84  |
+| occl_0.25      |   0.677 |  0.741 |       0.666 |              0.914 |              0.65  |
+| occl_0.5       |   0.371 |  0.734 |       0.605 |              0.715 |              0.59  |
+| sample_every_2 |   0.798 |  0.879 |       0.864 |              0.815 |              0.872 |
+| sample_every_4 |   0.812 |  0.812 |       0.783 |              0.725 |              0.811 |
+| sample_every_8 |   0.78  |  0.718 |       0.718 |              0.77  |              0.704 |
