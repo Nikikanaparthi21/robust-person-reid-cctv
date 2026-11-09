@@ -35,7 +35,8 @@ for r in rows:
                       "start": video_eval.parse_time(r["start_clock"]), "end": video_eval.parse_time(r["end_clock"])})
 feats = np.load(run / "tracklet_embeddings.npy")
 truth = [{"person": r["person"], "camera": r["camera"], "start": video_eval.parse_time(r["start"]),
-          "end": video_eval.parse_time(r["end"])} for r in csv.DictReader(open(args.truth))]
+          "end": video_eval.parse_time(r["end"])} for r in csv.DictReader(open(args.truth))
+         if video_eval.parse_time(r["end"]) > video_eval.parse_time(r["start"])]   # zero-length rows cannot be scored
 res = video_eval.evaluate_video(tracklets, feats, truth, args.threshold, args.min_overlap)
 labels = res.pop("labels")
 for t, lab in zip(tracklets, labels):

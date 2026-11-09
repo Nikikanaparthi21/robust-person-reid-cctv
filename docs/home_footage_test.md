@@ -52,3 +52,16 @@ resnet50 detector at 5 fps if people are missed. Do a 1-minute segment first to 
 
 **Important for scoring:** inside every processed segment, log *every* appearance of every person (including visitors, labelled
 `Visitor1`, ...). A person who is on camera but missing from the log is counted as an unlabeled distractor and lowers the scores.
+
+## Motion-triggered recordings (clips joined together)
+
+If your files only contain motion clips, video time is not wall time (the clock jumps between clips). Use the burned-in clock:
+
+```
+python scripts/run_video_pipeline.py --read-clock \
+  --video "CAM 1=/path/cam1.asf@2026-10-29" "CAM 2=/path/cam2.asf@2026-10-29" "CAM 3=/path/cam3.asf@2026-10-29" \
+  --clock-segment 08:18:00 08:21:00 --detector mobilenet --fps 3 --weights models/osnet_ft/best.pth --device mps
+python scripts/eval_video.py --run demo/data --truth data/ground_truth.csv
+```
+`scripts/check_clock.py` shows how well the clock is read and where each file jumps. Camera names in `--video` must match
+the `camera` column of the ground-truth log. Tracking restarts at every clock jump, so a tracklet never spans two clips.

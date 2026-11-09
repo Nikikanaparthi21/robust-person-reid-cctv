@@ -28,6 +28,8 @@ class VideoTracklet:
     boxes: list[np.ndarray] = field(default_factory=list)
     scores: list[float] = field(default_factory=list)
     crops: list[np.ndarray] = field(default_factory=list)   # RGB uint8 (256, 128, 3), evenly spaced subset
+    clock_s: list[float | None] = field(default_factory=list)   # burned-in clock, seconds since midnight (if read)
+    clip_id: int = 0                  # motion clip within the file (clock jumps start a new clip)
 
     @property
     def start_s(self) -> float:
@@ -36,6 +38,14 @@ class VideoTracklet:
     @property
     def end_s(self) -> float:
         return self.times_s[-1]
+
+    @property
+    def start_clock_s(self) -> float | None:
+        return self.clock_s[0] if self.clock_s else None
+
+    @property
+    def end_clock_s(self) -> float | None:
+        return self.clock_s[-1] if self.clock_s else None
 
 
 def read_frames(path: str, every_n: int | None = None, target_fps: float = 5.0, start_s: float = 0.0,
@@ -88,11 +98,74 @@ def crop_person(img: np.ndarray, box, out_w: int = CROP_W, out_h: int = CROP_H) 
     return cv2.resize(img[y1:y2, x1:x2], (out_w, out_h), interpolation=cv2.INTER_AREA)
 
 
+class ClipTracker:
+    """Follow the burned-in clock across sampled frames and number the motion clips.
+
+    A clip boundary is where the clock jumps (forward by more than `jump` s, or backwards) relative to what
+    elapsed video time predicts.  Unreadable frames reuse the prediction, so a few misreads do not split a clip.
+    """
+
+    def __init__(self, clock_fn, jump: float = 1.5):
+        self.clock_fn, self.jump = clock_fn, jump
+        self.prev = None          # (video_time, clock_s)
+        self.clip = 0
+
+    def update(self, t: float, img: np.ndarray):
+        """-> (clip_id, clock_s or None) for the frame at video time t."""
+        reading = self.clock_fn(img)
+        if self.prev is None:
+            clock = reading
+        else:
+            predicted = self.prev[1] + (t - self.prev[0])
+            if reading is None:
+                clock = predicted
+            else:
+                if not (-self.jump <= reading - predicted <= self.jump):
+                    self.clip += 1
+                clock = float(reading)
+        if clock is not None:
+            self.prev = (t, clock)
+        return self.clip, clock
+
+
+def find_video_time(clock_at, lo: float, hi: float, target: float, tol: float = 1.0) -> float:
+    """Video time where the burned-in clock first reaches `target` (clock is non-decreasing in video time).
+
+    clock_at(t) -> clock seconds or None.  Bisection; if `target` falls in a gap between clips the first moment
+    after it is returned.  Raises ValueError when the file ends before `target`.
+    """
+    def probe(t):
+        for k in range(4):                       # a frame may be unreadable: nudge forward and retry
+            c = clock_at(min(t + k * 0.5, hi))
+            if c is not None:
+                return c
+        return None
+
+    if (probe(hi) or -1) < target:
+        raise ValueError("clock never reaches the target time in this video")
+    while hi - lo > tol:
+        mid = (lo + hi) / 2
+        c = probe(mid)
+        if c is None or c >= target:
+            hi = mid
+        else:
+            lo = mid
+    return hi
+
+
 def process_video(path: str, camera: str, detector, every_n: int | None = None, target_fps: float = 5.0,
                   det_score: float = 0.5, min_box_height: int = 60, min_hits: int = 5, max_missed: int = 15,
                   max_crops: int = 16, batch: int = 8, start_s: float = 0.0, end_s: float | None = None,
-                  id_prefix: str = "") -> list[VideoTracklet]:
-    """Detect persons in sampled frames, track them, and keep up to `max_crops` evenly spaced crops per tracklet."""
+                  id_prefix: str = "", read_clock: bool = False, clock_fn=None) -> list[VideoTracklet]:
+    """Detect persons in sampled frames, track them, and keep up to `max_crops` evenly spaced crops per tracklet.
+
+    read_clock=True reads the burned-in clock from every sampled frame (for motion-triggered recordings whose video
+    time is not wall time): tracklets get clock times, and tracking restarts at every clock jump so no tracklet spans two clips.
+    """
+    if read_clock and clock_fn is None:
+        from .clock_reader import read_clock as clock_fn
+    clips = ClipTracker(clock_fn) if read_clock else None
+    clip_of, clock_of = {}, {}
     meta, frames_dets = [], []
     pending: list[tuple[int, float, np.ndarray]] = []
 
@@ -101,6 +174,8 @@ def process_video(path: str, camera: str, detector, every_n: int | None = None, 
             return
         outs = detector([p[2] for p in pending])
         for (fi, t, img), (boxes, scores) in zip(pending, outs):
+            if clips is not None:
+                clip_of[fi], clock_of[fi] = clips.update(t, img)
             boxes = np.asarray(boxes, float).reshape(-1, 4)
             scores = np.asarray(scores, float).reshape(-1)
             ok = (scores >= det_score) & ((boxes[:, 3] - boxes[:, 1]) >= min_box_height) if len(boxes) else []
@@ -117,13 +192,32 @@ def process_video(path: str, camera: str, detector, every_n: int | None = None, 
     flush()
 
     time_of = dict(meta)
-    tracks = ByteTrackLite(iou_thresh=0.3, max_missed=max_missed, min_hits=min_hits).run(frames_dets)
+    # track each clip on its own; ids are renumbered so they stay unique across clips
+    groups: dict[int, list] = {}
+    for (fi, _), dets in zip(meta, frames_dets):
+        groups.setdefault(clip_of.get(fi, 0), []).append(dets)
+    tracks, track_clip, nxt = {}, {}, 1
+    for cid in sorted(groups):
+        found = ByteTrackLite(iou_thresh=0.3, max_missed=max_missed, min_hits=min_hits).run(groups[cid])
+        for _, dets in sorted(found.items()):
+            tracks[nxt], track_clip[nxt] = dets, cid
+            nxt += 1
+    if clock_of:                                  # fill unreadable frames from their neighbours
+        known = [v for v in clock_of.values() if v is not None]
+        last = known[0] if known else None
+        for fi, _ in meta:
+            if clock_of[fi] is None:
+                clock_of[fi] = last
+            else:
+                last = clock_of[fi]
     out, wanted = [], {}
     for track_id, dets in sorted(tracks.items()):
         pick = np.linspace(0, len(dets) - 1, min(max_crops, len(dets))).round().astype(int)
         tl = VideoTracklet(tid=f"{camera}_{id_prefix}{track_id}", camera=camera, track_id=int(track_id),
                            frame_idx=[d.frame for d in dets], times_s=[time_of[d.frame] for d in dets],
-                           boxes=[d.box for d in dets], scores=[d.score for d in dets])
+                           boxes=[d.box for d in dets], scores=[d.score for d in dets],
+                           clock_s=[clock_of.get(d.frame) for d in dets] if clock_of else [],
+                           clip_id=track_clip[track_id])
         out.append(tl)
         for rank, j in enumerate(pick):
             wanted.setdefault(dets[j].frame, []).append((tl, rank, dets[j].box))
@@ -146,6 +240,12 @@ def embed_tracklets(tracklets: list[VideoTracklet], encoder, batch: int = 64, po
         pos += len(t.crops)
     keys, pooled = embeddings.pool_tracklets(frame_feats, index, pooling)
     return keys, pooled
+
+
+def format_day_clock(date: str, clock_s: float) -> str:
+    """'2026-10-29' + seconds since midnight -> '2026-10-29 06:04:34'."""
+    s = int(clock_s)
+    return f"{date} {s // 3600:02d}:{s % 3600 // 60:02d}:{s % 60:02d}"
 
 
 def format_clock(seconds: float, start_iso: str | None = None) -> str:

@@ -448,3 +448,47 @@ def test_clock_reader_handles_blank_frame():
     assert list(digits) == list(range(10)) and feats.shape[0] == 10
     assert read_clock(np.zeros((1080, 960, 3), np.uint8)) is None
     assert read_clock(np.full((1080, 960, 3), 255, np.uint8)) is None
+
+
+def test_clock_jump_splits_tracklet_and_gives_clock_times(tmp_path):
+    from cctv_reid import video_pipeline as vp
+
+    RED = (0, 0, 255)
+    boxes = _write_video(tmp_path / "c.mp4", [(RED, 0, 69, 10, 40)], n_frames=70, fps=10)
+    calls = iter(range(70))
+
+    def fake_clock(_img):          # frames 0-39: 06:00:00..06:00:03, then a jump to 06:05:00 (new motion clip)
+        f = next(calls)
+        return 21600 + f // 10 if f < 40 else 21900 + (f - 40) // 10
+
+    tl = vp.process_video(str(tmp_path / "c.mp4"), "C", _FakeDetector(boxes), every_n=1, min_hits=5,
+                          read_clock=True, clock_fn=fake_clock)
+    assert len(tl) == 2 and [t.clip_id for t in tl] == [0, 1]       # one tracklet per clip, not one spanning the jump
+    assert tl[0].tid != tl[1].tid
+    assert (tl[0].start_clock_s, tl[0].end_clock_s) == (21600, 21603)
+    assert (tl[1].start_clock_s, tl[1].end_clock_s) == (21900, 21902)
+    assert vp.format_day_clock("2026-10-29", tl[1].start_clock_s) == "2026-10-29 06:05:00"
+
+
+def test_clock_tracker_tolerates_unreadable_frames():
+    from cctv_reid import video_pipeline as vp
+
+    seq = iter([100, None, 100, 101, None, None, 102, 500, 501])
+    ct = vp.ClipTracker(lambda _img: next(seq))
+    out = [ct.update(i * 0.25, None) for i in range(9)]
+    assert [c for c, _ in out] == [0, 0, 0, 0, 0, 0, 0, 1, 1]     # misreads don't split; the jump to 500 does
+    assert out[1][1] is not None                                    # unreadable frame filled from prediction
+
+
+def test_find_video_time_bisects_clock():
+    from cctv_reid import video_pipeline as vp
+
+    def clock_at(t):               # two clips: video 0-100 s = 06:00:00+, video 100-200 s = 06:10:00+
+        return 21600 + t if t < 100 else 22200 + (t - 100)
+
+    assert abs(vp.find_video_time(clock_at, 0, 199, 21650) - 50) <= 1.0
+    assert abs(vp.find_video_time(clock_at, 0, 199, 21900) - 100) <= 1.0   # falls in the gap -> next clip start
+    assert abs(vp.find_video_time(clock_at, 0, 199, 22250) - 150) <= 1.0
+    import pytest
+    with pytest.raises(ValueError):
+        vp.find_video_time(clock_at, 0, 199, 30000)
