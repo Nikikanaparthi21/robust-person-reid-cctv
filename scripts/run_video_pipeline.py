@@ -77,6 +77,9 @@ def video_clock_segments(path, windows, name):
         ok, bgr = cap.read()
         return read_clock(cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB)) if ok else None
 
+    probes = {f"{int(t)}s": clock_at(t) for t in (0, total / 2, total - 10)}
+    shown = {k: (None if v is None else f"{int(v) // 3600:02d}:{int(v) % 3600 // 60:02d}:{int(v) % 60:02d}") for k, v in probes.items()}
+    print(f"[{name}] {total / 60:.1f} min of video; clock at video time {shown}", flush=True)
     out = []
     for a, b in windows:
         ca, cb = video_eval.parse_time(a), video_eval.parse_time(b)

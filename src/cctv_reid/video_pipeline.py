@@ -135,8 +135,10 @@ def find_video_time(clock_at, lo: float, hi: float, target: float, tol: float = 
     after it is returned.  Raises ValueError when the file ends before `target`.
     """
     def probe(t):
-        for k in range(4):                       # a frame may be unreadable: nudge forward and retry
-            c = clock_at(min(t + k * 0.5, hi))
+        # a frame may be unreadable (and seeking to the very end of a file returns nothing):
+        # try a little later, then step back
+        for dt in (0, 0.5, 1.0, 1.5, -1, -2, -3, -5, -8, -12):
+            c = clock_at(min(max(t + dt, lo), hi + 0.0))
             if c is not None:
                 return c
         return None

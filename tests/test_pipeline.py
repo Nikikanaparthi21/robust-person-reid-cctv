@@ -492,3 +492,12 @@ def test_find_video_time_bisects_clock():
     import pytest
     with pytest.raises(ValueError):
         vp.find_video_time(clock_at, 0, 199, 30000)
+
+
+def test_find_video_time_survives_unreadable_end_of_file():
+    from cctv_reid import video_pipeline as vp
+
+    def clock_at(t):               # seeking into the last 3 s returns no frame (as with real ASF files)
+        return None if t > 196 else 21600 + t
+
+    assert abs(vp.find_video_time(clock_at, 0, 199, 21650) - 50) <= 1.0
