@@ -15,12 +15,41 @@ venv/
 *.jpg
 *.jpeg
 *.png
+# Same media in any letter case and other common formats (camera exports are often upper case)
+*.[Mm][Pp]4
+*.[Mm][Oo][Vv]
+*.[Aa][Vv][Ii]
+*.[Mm][Kk][Vv]
+*.[Ww][Ee][Bb][Mm]
+*.[Hh]264
+*.[Jj][Pp][Gg]
+*.[Jj][Pp][Ee][Gg]
+*.[Pp][Nn][Gg]
+*.[Bb][Mm][Pp]
+*.[Gg][Ii][Ff]
+*.[Ww][Ee][Bb][Pp]
+*.[Hh][Ee][Ii][Cc]
+*.[Tt][Ii][Ff]
+*.[Tt][Ii][Ff][Ff]
+# Dataset archives and derived person data (crops, thumbnails, embeddings)
+*.zip
+*.tar
+*.tar.gz
+*.npy
+*.npz
+/data/embeddings/
+/data/crops/
+/demo/data/
 !results/**/*.png
 
 # Model artifacts and generated outputs
 *.pt
 *.pth
 *.onnx
+*.ckpt
+*.safetensors
+*.bin
+*.h5
 outputs/
 checkpoints/
 results/generated/

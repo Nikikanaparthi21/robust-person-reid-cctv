@@ -30,6 +30,12 @@ This is a research prototype comparing frame-level and tracklet-level representa
 
 Use one GitHub Issue per task, assign an owner, create a feature branch, and open a pull request before merging into main. Record the dataset, split, configuration, seed, metrics, and runtime for every experiment.
 
-## Privacy
+## Privacy and ethics
 
-Use public benchmark data or authorized footage. Do not commit raw CCTV video, face crops, credentials, or large model weights.
+Full policy: [docs/privacy_and_ethics.md](docs/privacy_and_ethics.md).
+
+- **Data:** public benchmark data (MARS), plus authorized CCTV footage only for a short local demonstration with the owner's written permission. Raw footage and anything derived from it (crops, thumbnails, embeddings, review CSVs) stays local, is never committed or uploaded, and is deleted at the end of the course.
+- **Outputs are leads, not identities:** similarity scores go to a human reviewer. No result triggers an action, and the system never names anyone. It uses whole-body appearance only, no face recognition.
+- **Not for:** identifying or tracking real people, linking matches to identity databases, or any decision about a person.
+- **Known limits:** false merges and splits, much lower accuracy on dark or blurry footage, results from a single campus dataset, and untested differences in accuracy across groups of people.
+- **Repository:** never commit raw CCTV video, face crops, credentials, or large model weights. `.gitignore` blocks video, images, dataset archives, weights and embeddings; check `git status` before committing.
