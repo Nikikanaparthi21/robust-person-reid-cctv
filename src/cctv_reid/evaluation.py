@@ -148,12 +148,43 @@ def tracking_metrics(gt, pred, iou_thresh: float = 0.5) -> dict[str, float]:
 
 # ---------- runtime / memory ----------
 def peak_memory_mb() -> float:
-    """Peak resident memory of this process in MB (Linux reports KB, macOS bytes)."""
-    import resource
+    """Peak resident memory of this process in MB.
+
+    Uses `resource` on Linux (reports KB) and macOS (reports bytes). `resource` does not exist on Windows,
+    so there the peak working-set size comes from the Win32 API via ctypes. Returns NaN if neither is available.
+    """
     import sys
 
+    try:
+        import resource
+    except ImportError:
+        return _windows_peak_memory_mb() if sys.platform == "win32" else float("nan")
     peak = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
     return float(peak / (1024 * 1024) if sys.platform == "darwin" else peak / 1024)
+
+
+def _windows_peak_memory_mb() -> float:
+    """Peak working set of this process in MB via GetProcessMemoryInfo (no extra dependencies)."""
+    import ctypes
+    from ctypes import wintypes
+
+    class ProcessMemoryCounters(ctypes.Structure):
+        _fields_ = [("cb", wintypes.DWORD), ("PageFaultCount", wintypes.DWORD),
+                    ("PeakWorkingSetSize", ctypes.c_size_t), ("WorkingSetSize", ctypes.c_size_t),
+                    ("QuotaPeakPagedPoolUsage", ctypes.c_size_t), ("QuotaPagedPoolUsage", ctypes.c_size_t),
+                    ("QuotaPeakNonPagedPoolUsage", ctypes.c_size_t), ("QuotaNonPagedPoolUsage", ctypes.c_size_t),
+                    ("PagefileUsage", ctypes.c_size_t), ("PeakPagefileUsage", ctypes.c_size_t)]
+
+    counters = ProcessMemoryCounters()
+    counters.cb = ctypes.sizeof(counters)
+    kernel32 = ctypes.WinDLL("kernel32")
+    kernel32.GetCurrentProcess.restype = wintypes.HANDLE
+    get_info = getattr(kernel32, "K32GetProcessMemoryInfo", None) or ctypes.WinDLL("psapi").GetProcessMemoryInfo
+    get_info.argtypes = [wintypes.HANDLE, ctypes.POINTER(ProcessMemoryCounters), wintypes.DWORD]
+    get_info.restype = wintypes.BOOL
+    if not get_info(kernel32.GetCurrentProcess(), ctypes.byref(counters), counters.cb):
+        return float("nan")
+    return float(counters.PeakWorkingSetSize / (1024 * 1024))
 
 
 def throughput(n_items: int, seconds: float) -> float:

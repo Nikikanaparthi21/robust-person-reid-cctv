@@ -263,6 +263,17 @@ def test_runtime_helpers():
     assert evaluation.throughput(100, 2.0) == 50.0 and evaluation.throughput(5, 0) == 0.0
 
 
+def test_peak_memory_without_resource_module(monkeypatch):
+    """Platforms without `resource` (Windows) must not crash; non-Windows falls back to NaN."""
+    import sys
+
+    monkeypatch.setitem(sys.modules, "resource", None)  # makes `import resource` raise ImportError
+    if sys.platform == "win32":
+        assert evaluation.peak_memory_mb() > 0
+    else:
+        assert np.isnan(evaluation.peak_memory_mb())
+
+
 def test_error_analysis_taxonomy_on_mars_named_features():
     from cctv_reid import error_analysis
 
