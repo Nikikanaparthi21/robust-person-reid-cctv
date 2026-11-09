@@ -62,8 +62,14 @@ def _feature(gray: np.ndarray, x0: float, x1: float) -> np.ndarray:
 
 
 def _gray(frame: np.ndarray) -> np.ndarray:
+    """Grayscale, resized to the calibration geometry (frames may be squeezed, e.g. 960x1080)."""
     f = frame.astype(np.float32)
-    return f.mean(2) if f.ndim == 3 else f
+    g = f.mean(2) if f.ndim == 3 else f
+    if g.shape[1] != int(REF_W) or g.shape[0] != int(REF_H):
+        from PIL import Image
+        g = np.asarray(Image.fromarray(g).resize((int(REF_W), int(REF_H)), Image.BILINEAR),
+                       dtype=np.float32)
+    return g
 
 
 def cell_features(frame: np.ndarray, slots, x0: float, pitch: float = TIME_PITCH) -> list[np.ndarray]:
