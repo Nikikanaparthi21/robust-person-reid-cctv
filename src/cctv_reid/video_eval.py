@@ -80,4 +80,26 @@ def evaluate_video(tracklets: list[dict], feats: np.ndarray, truth: list[dict], 
         out.update({"cluster_precision": m["precision"], "cluster_recall": m["recall"], "cluster_f1": m["f1"],
                     "cluster_purity": m["purity"], "clusters_per_person": m["clusters_per_identity"]})
     out["labels"] = all_labels
+    if len(q):
+        out["details"] = query_details(tracklets, feats, pid, cams, q, labels)
     return out
+
+
+def query_details(tracklets, feats, pid, cams, q, labels):
+    """For each query (a labeled person seen on 2+ cameras): where did the first correct match rank, and what was top-1?
+
+    Same-camera candidates are skipped, as in the metrics, so this is purely cross-camera retrieval.
+    """
+    feats = np.asarray(feats, float)
+    rows = []
+    for i in q:
+        sim = feats @ feats[i]
+        order = [j for j in np.argsort(-sim) if j != i and cams[j] != cams[i]]
+        correct = [r for r, j in enumerate(order, 1) if pid[j] == pid[i]]
+        top = order[0] if order else None
+        rows.append({"query": tracklets[i].get("id", i), "person": labels[i], "n_correct_other_cams": len(correct),
+                     "first_correct_rank": correct[0] if correct else None,
+                     "top1": tracklets[top].get("id", int(top)) if top is not None else None,
+                     "top1_label": (labels[top] or "(unlabeled)") if top is not None else None,
+                     "top1_sim": round(float(sim[top]), 3) if top is not None else None})
+    return rows

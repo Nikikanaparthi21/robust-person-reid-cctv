@@ -39,11 +39,18 @@ truth = [{"person": r["person"], "camera": r["camera"], "start": video_eval.pars
          if video_eval.parse_time(r["end"]) > video_eval.parse_time(r["start"])]   # zero-length rows cannot be scored
 res = video_eval.evaluate_video(tracklets, feats, truth, args.threshold, args.min_overlap)
 labels = res.pop("labels")
+details = res.pop("details", [])
 for t, lab in zip(tracklets, labels):
     shown = "(ambiguous: excluded)" if lab == "?" else (lab or "(unlabeled)")
     print(f"{t['id']:<22} -> {shown}")
 print()
 for k, v in res.items():
     print(f"{k:<20} {v:.3f}" if isinstance(v, float) else f"{k:<20} {v}")
-io_utils.save_json({**res, "labels": dict(zip([t['id'] for t in tracklets], labels))}, run / "video_eval.json")
+if details:
+    print("\nper-query cross-camera results (query -> first correct rank; wrong top-1 shown):")
+    for d in details:
+        ok = d["first_correct_rank"] == 1
+        print(f"  {d['query']:<14} {d['person']:<8} first correct at rank {d['first_correct_rank']}"
+              + ("" if ok else f"   top-1 was {d['top1']} ({d['top1_label']}, sim {d['top1_sim']})"))
+io_utils.save_json({**res, "details": details, "labels": dict(zip([t['id'] for t in tracklets], labels))}, run / "video_eval.json")
 print("saved", run / "video_eval.json")

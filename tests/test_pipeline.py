@@ -526,3 +526,19 @@ def test_window_from_index_and_scan(tmp_path):
     n = iter(range(100))
     idx = vp.scan_clock_index(str(tmp_path / "i.mp4"), every_s=1.0, clock_fn=lambda _img: 100 + next(n))
     assert [round(t) for t, _ in idx] == [0, 1, 2, 3, 4, 5, 6]            # one sample per video second, in order
+
+
+def test_video_eval_reports_per_query_details():
+    from cctv_reid import video_eval
+
+    truth = [{"person": "A", "camera": "X", "start": 0, "end": 10}, {"person": "A", "camera": "Y", "start": 0, "end": 10},
+             {"person": "B", "camera": "Y", "start": 20, "end": 30}]
+    tr = [{"id": "x", "camera": "X", "camera_index": 1, "start": 1, "end": 9},
+          {"id": "y", "camera": "Y", "camera_index": 2, "start": 1, "end": 9},
+          {"id": "z", "camera": "Y", "camera_index": 2, "start": 21, "end": 29}]
+    feats = np.array([[1, 0], [0.9, 0.1], [1, 0.05]], float)       # z is a closer lookalike than y for query x
+    feats /= np.linalg.norm(feats, axis=1, keepdims=True)
+    res = video_eval.evaluate_video(tr, feats, truth)
+    d = {r["query"]: r for r in res["details"]}
+    assert d["x"]["first_correct_rank"] in (1, 2) and d["x"]["top1"] in ("y", "z")
+    assert all("top1_sim" in r for r in res["details"])
