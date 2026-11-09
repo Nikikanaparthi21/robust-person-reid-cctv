@@ -64,40 +64,35 @@ from cctv_reid.embeddings import TorchreidEncoder  # noqa: E402
 encoder = TorchreidEncoder(args.model, args.weights, args.device)
 
 def video_clock_segments(path, windows, name):
-    """Convert clock-time windows (HH:MM:SS) to video-time (start, end) segments for this file."""
-    import cv2
-    from cctv_reid.clock_reader import read_clock
+    """Convert clock-time windows (HH:MM:SS) to video-time (start, end) segments for this file.
 
-    cap = cv2.VideoCapture(str(path))
-    fps = cap.get(cv2.CAP_PROP_FPS) or 12.0
-    total = cap.get(cv2.CAP_PROP_FRAME_COUNT) / fps
+    The file's clock is indexed once in a single sequential pass (random seeks are very slow in these files) and
+    cached next to the results, so later runs on the same file are instant.
+    """
+    import json
 
-    def clock_at(t):
-        cap.set(cv2.CAP_PROP_POS_MSEC, t * 1000)
-        ok, bgr = cap.read()
-        return read_clock(cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB)) if ok else None
-
-    probes = {f"{int(t)}s": clock_at(t) for t in (0, total / 2, total - 10)}
-    shown = {k: (None if v is None else f"{int(v) // 3600:02d}:{int(v) % 3600 // 60:02d}:{int(v) % 60:02d}") for k, v in probes.items()}
-    print(f"[{name}] {total / 60:.1f} min of video; clock at video time {shown}", flush=True)
-    out = []
+    pth = Path(path)
+    cache = out / f"clock_index_{pth.stem}.json"
+    key = [pth.stat().st_size, int(pth.stat().st_mtime)]
+    index = None
+    if cache.exists():
+        saved = json.loads(cache.read_text())
+        if saved.get("key") == key:
+            index = saved["index"]
+    if index is None:
+        print(f"[{name}] indexing the burned-in clock (one pass over the file, cached afterwards) ...", flush=True)
+        index = vp.scan_clock_index(path)
+        cache.write_text(json.dumps({"key": key, "index": index}))
+    hms = lambda v: f"{int(v) // 3600:02d}:{int(v) % 3600 // 60:02d}:{int(v) % 60:02d}"  # noqa: E731
+    print(f"[{name}] clock index: {len(index)} samples, {hms(index[0][1])} .. {hms(index[-1][1])}", flush=True)
+    segs = []
     for a, b in windows:
-        ca, cb = video_eval.parse_time(a), video_eval.parse_time(b)
-        try:
-            va = vp.find_video_time(clock_at, 0.0, total - 1, ca)
-        except ValueError:
-            print(f"[{name}] clock window {a}-{b}: file ends before {a}, skipped")
-            continue
-        try:
-            vb = vp.find_video_time(clock_at, va, total - 1, cb)
-        except ValueError:
-            vb = total
-        if vb - va < 1:
+        w = vp.window_from_index(index, video_eval.parse_time(a), video_eval.parse_time(b))
+        if w is None:
             print(f"[{name}] clock window {a}-{b}: nothing recorded in it (gap between clips), skipped")
-            continue
-        out.append((va, vb))
-    cap.release()
-    return out
+        else:
+            segs.append(w)
+    return segs
 
 
 all_tracklets, starts, links, dates = [], {}, {}, {}

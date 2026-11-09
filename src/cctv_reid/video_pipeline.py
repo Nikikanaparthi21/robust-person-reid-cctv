@@ -163,6 +163,51 @@ def find_video_time(clock_at, lo: float, hi: float, target: float, tol: float = 
     return hi
 
 
+def scan_clock_index(path: str, every_s: float = 2.0, clock_fn=None, progress_every_s: float = 600.0):
+    """One sequential pass over the file -> [(video_time_s, clock_s), ...] sampled every `every_s` video seconds.
+
+    Random seeking in these ASF files is very slow (no index: each seek decodes from the start), so the clock is
+    indexed once, in order, and windows are looked up in the index instead.
+    """
+    import time
+
+    import cv2
+
+    if clock_fn is None:
+        from .clock_reader import read_clock as clock_fn
+    cap = cv2.VideoCapture(str(path))
+    if not cap.isOpened():
+        raise OSError(f"cannot open video: {path}")
+    fps = cap.get(cv2.CAP_PROP_FPS) or 12.0
+    total = cap.get(cv2.CAP_PROP_FRAME_COUNT) / fps
+    step = max(1, int(round(every_s * fps)))
+    out, i, t0, next_report = [], 0, time.time(), progress_every_s
+    while True:
+        if i % step == 0:
+            ok, bgr = cap.read()
+            if not ok:
+                break
+            c = clock_fn(cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB))
+            if c is not None:
+                out.append((i / fps, float(c)))
+        elif not cap.grab():
+            break
+        i += 1
+        if i / fps >= next_report:
+            print(f"    indexed {i / fps / 60:.0f} of {total / 60:.0f} min ({time.time() - t0:.0f} s elapsed)", flush=True)
+            next_report += progress_every_s
+    cap.release()
+    return out
+
+
+def window_from_index(index, clock_start: float, clock_end: float, pad_s: float = 2.0):
+    """(video_start, video_end) covering the clock window, or None if nothing was recorded in it."""
+    inside = [(t, c) for t, c in index if clock_start <= c <= clock_end]
+    if not inside:
+        return None
+    return max(0.0, inside[0][0] - pad_s), inside[-1][0] + pad_s
+
+
 def process_video(path: str, camera: str, detector, every_n: int | None = None, target_fps: float = 5.0,
                   det_score: float = 0.5, min_box_height: int = 60, min_hits: int = 5, max_missed: int = 15,
                   max_crops: int = 16, batch: int = 8, start_s: float = 0.0, end_s: float | None = None,

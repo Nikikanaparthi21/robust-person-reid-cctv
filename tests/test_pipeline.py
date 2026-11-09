@@ -513,3 +513,16 @@ def test_find_video_time_survives_long_unreadable_tail():
     import pytest
     with pytest.raises(ValueError):          # target lies inside the unreadable tail
         vp.find_video_time(clock_at, 0, 1000, 22500)
+
+
+def test_window_from_index_and_scan(tmp_path):
+    from cctv_reid import video_pipeline as vp
+
+    index = [(0, 21600), (2, 21602), (4, 21700), (6, 21702), (8, 22000)]   # clips: 0-2 s, 4-6 s, 8 s
+    assert vp.window_from_index(index, 21650, 21800) == (2.0, 8.0)         # covers the clip at 4-6 s (+/- 2 s pad)
+    assert vp.window_from_index(index, 21800, 21900) is None               # gap: nothing recorded
+    RED = (0, 0, 255)
+    _write_video(tmp_path / "i.mp4", [(RED, 0, 69, 10, 40)], n_frames=70, fps=10)
+    n = iter(range(100))
+    idx = vp.scan_clock_index(str(tmp_path / "i.mp4"), every_s=1.0, clock_fn=lambda _img: 100 + next(n))
+    assert [round(t) for t, _ in idx] == [0, 1, 2, 3, 4, 5, 6]            # one sample per video second, in order
