@@ -36,3 +36,19 @@ open demo/index.html
 ```
 `eval_video.py` prints each tracklet's label plus rank-1 / rank-5 / mAP (cross-camera retrieval) and clustering precision, recall
 and F1. Report the home-footage numbers separately from MARS: they test a different camera setup (domain shift).
+
+## Long recordings (hours): process selected segments
+Do not run hours of footage. Pick 3-5 busy segments of about 10 minutes where people cross between cameras, and process only those:
+```bash
+python scripts/run_video_pipeline.py \
+  --video "Entrance=/path/cam1.mp4@2026-10-29T08:00:00" "Hallway=/path/cam2.mp4@2026-10-29T08:00:03" "Garage=/path/cam3.mp4@2026-10-29T08:00:01" \
+  --segment 00:12:00 00:22:00 --segment 01:30:00 01:40:00 \
+  --weights models/osnet_ft/best.pth --device mps --detector mobilenet --fps 3 --out demo/data
+```
+`--segment START END` is video time (HH:MM:SS from the start of each file) and applies to every video, so cut the cameras at the
+same clock times (if the files started at different times, pass a different pair per run or align the files first). Clock times in
+the viewer and in the evaluation stay absolute. `--detector mobilenet --fps 3` is much faster than the default; use the default
+resnet50 detector at 5 fps if people are missed. Do a 1-minute segment first to check speed and quality.
+
+**Important for scoring:** inside every processed segment, log *every* appearance of every person (including visitors, labelled
+`Visitor1`, ...). A person who is on camera but missing from the log is counted as an unlabeled distractor and lowers the scores.

@@ -425,3 +425,16 @@ def test_video_eval_ambiguous_tracklets_are_excluded():
     assert video_eval.assign_labels(tr, truth) == [video_eval.AMBIGUOUS, "A"]  # A and B both in camera X at that time
     res = video_eval.evaluate_video(tr, np.eye(2), truth)
     assert res["n_ambiguous"] == 1 and res["n_labeled"] == 1 and res["n_queries"] == 0
+
+
+def test_video_segment_keeps_absolute_times(tmp_path):
+    from cctv_reid import video_pipeline as vp
+
+    RED = (0, 0, 255)
+    boxes = _write_video(tmp_path / "s.mp4", [(RED, 0, 79, 10, 40)], n_frames=80, fps=10)
+    seg = boxes[20:41]  # frames 20..40 inclusive = seconds 2.0 .. 4.0
+    tl = vp.process_video(str(tmp_path / "s.mp4"), "S", _FakeDetector(seg), every_n=1, min_hits=5,
+                          start_s=2.0, end_s=4.0, id_prefix="s1_")
+    assert len(tl) == 1 and tl[0].tid == "S_s1_1"
+    assert abs(tl[0].start_s - 2.0) < 1e-6 and abs(tl[0].end_s - 4.0) < 1e-6  # absolute video time, not segment time
+    assert len(tl[0].frame_idx) == 21 and all(c.shape == (256, 128, 3) for c in tl[0].crops)

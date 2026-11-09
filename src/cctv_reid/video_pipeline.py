@@ -38,8 +38,12 @@ class VideoTracklet:
         return self.times_s[-1]
 
 
-def read_frames(path: str, every_n: int | None = None, target_fps: float = 5.0):
-    """Yield (frame_idx, time_s, RGB image) for sampled frames. Returns fps via the first yielded item's attribute."""
+def read_frames(path: str, every_n: int | None = None, target_fps: float = 5.0, start_s: float = 0.0,
+                end_s: float | None = None):
+    """Yield (frame_idx, time_s, RGB image) for sampled frames between start_s and end_s (video time, seconds).
+
+    frame_idx and time_s are always relative to the start of the whole video, so clock times stay correct for segments.
+    """
     import cv2
 
     cap = cv2.VideoCapture(str(path))
@@ -47,9 +51,12 @@ def read_frames(path: str, every_n: int | None = None, target_fps: float = 5.0):
         raise OSError(f"cannot open video: {path}")
     fps = cap.get(cv2.CAP_PROP_FPS) or 25.0
     step = every_n if every_n else max(1, int(round(fps / target_fps)))
-    i = 0
+    i = int(round(start_s * fps)) if start_s > 0 else 0
+    last = None if end_s is None else int(round(end_s * fps))
+    if i > 0:
+        cap.set(cv2.CAP_PROP_POS_FRAMES, i)
     try:
-        while True:
+        while last is None or i <= last:
             ok, bgr = cap.read()
             if not ok:
                 break
@@ -83,7 +90,8 @@ def crop_person(img: np.ndarray, box, out_w: int = CROP_W, out_h: int = CROP_H) 
 
 def process_video(path: str, camera: str, detector, every_n: int | None = None, target_fps: float = 5.0,
                   det_score: float = 0.5, min_box_height: int = 60, min_hits: int = 5, max_missed: int = 15,
-                  max_crops: int = 16, batch: int = 8) -> list[VideoTracklet]:
+                  max_crops: int = 16, batch: int = 8, start_s: float = 0.0, end_s: float | None = None,
+                  id_prefix: str = "") -> list[VideoTracklet]:
     """Detect persons in sampled frames, track them, and keep up to `max_crops` evenly spaced crops per tracklet."""
     meta, frames_dets = [], []
     pending: list[tuple[int, float, np.ndarray]] = []
@@ -102,7 +110,7 @@ def process_video(path: str, camera: str, detector, every_n: int | None = None, 
         pending.clear()
 
     # Pass 1: detect + track (no frames are kept in memory). Pass 2 re-reads the video for the few crops needed.
-    for fi, t, img in read_frames(path, every_n, target_fps):
+    for fi, t, img in read_frames(path, every_n, target_fps, start_s, end_s):
         pending.append((fi, t, img))
         if len(pending) >= batch:
             flush()
@@ -113,7 +121,7 @@ def process_video(path: str, camera: str, detector, every_n: int | None = None, 
     out, wanted = [], {}
     for track_id, dets in sorted(tracks.items()):
         pick = np.linspace(0, len(dets) - 1, min(max_crops, len(dets))).round().astype(int)
-        tl = VideoTracklet(tid=f"{camera}_{track_id}", camera=camera, track_id=int(track_id),
+        tl = VideoTracklet(tid=f"{camera}_{id_prefix}{track_id}", camera=camera, track_id=int(track_id),
                            frame_idx=[d.frame for d in dets], times_s=[time_of[d.frame] for d in dets],
                            boxes=[d.box for d in dets], scores=[d.score for d in dets])
         out.append(tl)
@@ -121,7 +129,7 @@ def process_video(path: str, camera: str, detector, every_n: int | None = None, 
             wanted.setdefault(dets[j].frame, []).append((tl, rank, dets[j].box))
     for tl in out:
         tl.crops = [None] * len([1 for v in wanted.values() for w in v if w[0] is tl])
-    for fi, t, img in read_frames(path, every_n, target_fps):
+    for fi, t, img in read_frames(path, every_n, target_fps, start_s, end_s):
         for tl, rank, box in wanted.get(fi, []):
             tl.crops[rank] = crop_person(img, box)
     return out

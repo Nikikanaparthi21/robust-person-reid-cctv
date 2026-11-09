@@ -7,6 +7,8 @@ tracking, clock and viewer-data logic is tested with a fake detector and encoder
       --video "Entrance=/path/entrance.mp4@2026-11-06T09:00:00" "Aisle 2=/path/aisle2.mp4@2026-11-06T09:00:07" \
       --weights models/osnet_ft/best.pth --device mps --out demo/data
   open demo/index.html
+Long footage: add one or more  --segment HH:MM:SS HH:MM:SS  (video time) to process only those parts of every video,
+e.g. --segment 00:12:00 00:22:00 --segment 01:30:00 01:40:00 . Times shown in the viewer stay absolute.
 
 Each --video is  CameraName=path[@start-time]. The optional ISO start time is the real clock time of the first frame,
 so results show wall-clock times (otherwise HH:MM:SS from the start of that video). Videos are symlinked into the
@@ -24,7 +26,7 @@ from pathlib import Path
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).parents[1] / "src"))
-from cctv_reid import demo_data, video_pipeline as vp  # noqa: E402
+from cctv_reid import demo_data, video_eval, video_pipeline as vp  # noqa: E402
 
 p = argparse.ArgumentParser()
 p.add_argument("--video", nargs="+", required=True, help='CameraName=path[@ISO start time], one per camera')
@@ -33,6 +35,8 @@ p.add_argument("--model", default="osnet_x1_0")
 p.add_argument("--device", default="cpu", help="encoder device: cpu | mps | cuda")
 p.add_argument("--det-device", default="cpu")
 p.add_argument("--detector", default="resnet50", choices=["resnet50", "mobilenet"])
+p.add_argument("--segment", nargs=2, action="append", metavar=("START", "END"),
+               help="process only this part of every video (HH:MM:SS from the video start); repeat for several segments")
 p.add_argument("--fps", type=float, default=5.0, help="frames per second to process")
 p.add_argument("--det-score", type=float, default=0.6)
 p.add_argument("--min-box-height", type=int, default=80)
@@ -63,12 +67,16 @@ for cam_idx, spec in enumerate(args.video, 1):
     os.symlink(Path(path).resolve(), link)
     links[name] = f"videos/{link.name}"
     print(f"[{name}] detecting and tracking {path} ...", flush=True)
-    tls = vp.process_video(path, name, detector, target_fps=args.fps, det_score=args.det_score,
-                           min_box_height=args.min_box_height, min_hits=args.min_hits, max_missed=args.max_missed)
-    for t in tls:
-        t.camera_index = cam_idx
-    print(f"[{name}] {len(tls)} tracklets", flush=True)
-    all_tracklets += tls
+    segments = [(video_eval.parse_time(a), video_eval.parse_time(b)) for a, b in (args.segment or [(0, None)])]
+    segments = [(a, None if b in (None, 0) else b) for a, b in segments]
+    for k, (a, b) in enumerate(segments, 1):
+        if args.segment:
+            print(f"[{name}] segment {k}: {vp.format_clock(a)} - {vp.format_clock(b) if b else 'end'}", flush=True)
+        tls = vp.process_video(path, name, detector, target_fps=args.fps, det_score=args.det_score,
+                               min_box_height=args.min_box_height, min_hits=args.min_hits, max_missed=args.max_missed,
+                               start_s=a, end_s=b, id_prefix=f"s{k}_" if args.segment else "")
+        print(f"[{name}] {len(tls)} tracklets", flush=True)
+        all_tracklets += tls
 if not all_tracklets:
     sys.exit("no tracklets found: lower --det-score / --min-hits, or check the video")
 
