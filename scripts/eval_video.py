@@ -40,7 +40,8 @@ truth = [{"person": r["person"], "camera": r["camera"], "start": video_eval.pars
 res = video_eval.evaluate_video(tracklets, feats, truth, args.threshold, args.min_overlap)
 labels = res.pop("labels")
 for t, lab in zip(tracklets, labels):
-    print(f"{t['id']:<22} -> {"(ambiguous: excluded)" if lab == "?" else (lab or "(unlabeled)")}")
+    shown = "(ambiguous: excluded)" if lab == "?" else (lab or "(unlabeled)")
+    print(f"{t['id']:<22} -> {shown}")
 print()
 for k, v in res.items():
     print(f"{k:<20} {v:.3f}" if isinstance(v, float) else f"{k:<20} {v}")
