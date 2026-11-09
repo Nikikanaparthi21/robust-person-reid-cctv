@@ -327,3 +327,27 @@ def test_demo_data_structure_and_no_invented_times():
     key = out["queries"][0]["key"]
     timed = demo_data.build(ds["frames"], names, n_queries=1, top_k=3, times={key: 12.5})
     assert timed["meta"]["has_time"] is True
+
+# ---------- robustness helpers (torch-free) ----------
+def test_robustness_conditions_and_quality():
+    from cctv_reid import robustness
+
+    rng = np.random.default_rng(0)
+    imgs = rng.integers(0, 255, size=(6, 64, 32, 3), dtype=np.uint8)
+    for name in robustness.CONDITIONS:
+        out = robustness.apply_condition(imgs[0], name, np.random.default_rng(1))
+        assert out.shape == imgs[0].shape and out.dtype == np.uint8
+    assert robustness.apply_condition(imgs[0], "clean", rng).tolist() == imgs[0].tolist()
+    blurred = np.stack([robustness.apply_condition(i, "blur_s4", rng) for i in imgs])
+    q_clean, q_blur = robustness.sharpness_quality(imgs), robustness.sharpness_quality(blurred)
+    assert q_clean.min() == 0 and q_clean.max() == 1 and q_blur.shape == (6,)
+    mixed = robustness.sharpness_quality(np.concatenate([imgs[:3], blurred[:3]]))
+    assert mixed[:3].mean() > mixed[3:].mean()  # sharper frames rank higher
+
+
+def test_subsample_indices_per_tracklet():
+    from cctv_reid import robustness
+
+    names = [f"0001C1T0001F{f:03d}.jpg" for f in range(1, 9)] + [f"0002C1T0001F{f:03d}.jpg" for f in range(1, 4)]
+    assert robustness.subsample_indices(names, 1).tolist() == list(range(11))
+    assert robustness.subsample_indices(names, 4).tolist() == [0, 4, 8]  # first frame of each 4-block; tracklet 2 keeps its first

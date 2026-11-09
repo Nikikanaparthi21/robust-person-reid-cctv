@@ -27,5 +27,20 @@ for folder, title in RUNS:
     df = pd.read_csv(path)[COLS].round(3)
     df.columns = NAMES
     lines += [f"## {title}", "", df.to_markdown(index=False), ""]
+rob = root / "results" / "mars_osnet_robustness" / "robustness.csv"
+if rob.exists():
+    d = pd.read_csv(rob)
+    order = ["clean", "blur_s2", "blur_s4", "dark_0.5", "dark_0.25", "lowres_0.5", "lowres_0.25", "occl_0.25",
+             "occl_0.5", "sample_every_2", "sample_every_4", "sample_every_8"]
+    meths = ["frame", "mean", "attention", "quality_filtered", "quality_weighted"]
+    lines += ["## Robustness: fine-tuned OSNet", "",
+              "Degradations are applied to the 128x256 encoder input (blur sigma, brightness factor, down-sampling "
+              "factor, occluding band as a fraction of height placed at a random offset in each frame independently). "
+              "`sample_every_n` keeps every n-th of the <=16 frames per tracklet. Clustering thresholds are re-tuned on "
+              "the validation half under each condition.", ""]
+    for col, title in (("mAP", "mAP"), ("rank1", "Rank-1"), ("agglomerative_f1", "Agglomerative F1 (frame-level)")):
+        t = d.pivot(index="condition", columns="method", values=col).loc[order, meths].round(3)
+        t.index.name = "Condition"
+        lines += [f"### {title}", "", t.reset_index().to_markdown(index=False), ""]
 (root / "docs" / "results.md").write_text("\n".join(lines))
 print("wrote docs/results.md")
