@@ -501,3 +501,15 @@ def test_find_video_time_survives_unreadable_end_of_file():
         return None if t > 196 else 21600 + t
 
     assert abs(vp.find_video_time(clock_at, 0, 199, 21650) - 50) <= 1.0
+
+
+def test_find_video_time_survives_long_unreadable_tail():
+    from cctv_reid import video_pipeline as vp
+
+    def clock_at(t):               # last 5 minutes of the file cannot be read at all
+        return None if t > 700 else 21600 + t
+
+    assert abs(vp.find_video_time(clock_at, 0, 1000, 21900) - 300) <= 1.0
+    import pytest
+    with pytest.raises(ValueError):          # target lies inside the unreadable tail
+        vp.find_video_time(clock_at, 0, 1000, 22500)

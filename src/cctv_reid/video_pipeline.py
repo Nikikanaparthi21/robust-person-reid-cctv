@@ -143,8 +143,16 @@ def find_video_time(clock_at, lo: float, hi: float, target: float, tol: float = 
                 return c
         return None
 
-    if (probe(hi) or -1) < target:
+    # The end of a file may be unreadable (seeking fails there): walk back until a frame reads, up to 15 min.
+    last_ok, top = None, hi
+    for back in range(0, 900, 20):
+        c = probe(max(lo, hi - back))
+        if c is not None:
+            last_ok, top = c, max(lo, hi - back)
+            break
+    if last_ok is None or last_ok < target:
         raise ValueError("clock never reaches the target time in this video")
+    hi = top
     while hi - lo > tol:
         mid = (lo + hi) / 2
         c = probe(mid)
