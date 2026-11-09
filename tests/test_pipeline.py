@@ -542,3 +542,20 @@ def test_video_eval_reports_per_query_details():
     d = {r["query"]: r for r in res["details"]}
     assert d["x"]["first_correct_rank"] in (1, 2) and d["x"]["top1"] in ("y", "z")
     assert all("top1_sim" in r for r in res["details"])
+
+
+def test_time_prior_bonus_and_comparison():
+    from cctv_reid import time_prior, video_eval
+
+    layout = {("X", "Y"): (3, 40)}
+    tr = [{"id": "a", "camera": "X", "camera_index": 1, "start": 0, "end": 10},
+          {"id": "b", "camera": "Y", "camera_index": 2, "start": 20, "end": 30},      # 10 s after a: plausible
+          {"id": "c", "camera": "Y", "camera_index": 2, "start": 5000, "end": 5010}]  # hours later: no bonus
+    B = time_prior.bonus_matrix(tr, layout, 0.1)
+    assert B[0, 1] == B[1, 0] == 0.1 and B[0, 2] == 0 and B[1, 2] == 0           # same camera never gets a bonus
+    truth = [{"person": "P", "camera": "X", "start": 0, "end": 10}, {"person": "P", "camera": "Y", "start": 20, "end": 30},
+             {"person": "Q", "camera": "Y", "start": 5000, "end": 5010}]
+    feats = np.array([[1, 0], [0.8, 0.6], [0.95, 0.31]], float)    # stranger c looks more like a than the true match b does
+    res = video_eval.evaluate_video(tr, feats, truth, layout=layout)
+    # two queries (a and b); only a's ranking is fooled by the lookalike stranger c, and the bonus repairs it
+    assert res["time_prior"]["0.0"]["rank1"] == 0.5 and res["time_prior"]["0.2"]["rank1"] == 1.0

@@ -53,7 +53,7 @@ def assign_labels(tracklets: list[dict], truth: list[dict], min_overlap: float =
 
 
 def evaluate_video(tracklets: list[dict], feats: np.ndarray, truth: list[dict], threshold: float = 0.3,
-                   min_overlap: float = 0.5) -> dict:
+                   min_overlap: float = 0.5, layout: dict | None = None) -> dict:
     all_labels = assign_labels(tracklets, truth, min_overlap)
     keep = [i for i, lab in enumerate(all_labels) if lab != AMBIGUOUS]
     n_ambiguous = len(all_labels) - len(keep)
@@ -80,9 +80,42 @@ def evaluate_video(tracklets: list[dict], feats: np.ndarray, truth: list[dict], 
         out.update({"cluster_precision": m["precision"], "cluster_recall": m["recall"], "cluster_f1": m["f1"],
                     "cluster_purity": m["purity"], "clusters_per_person": m["clusters_per_identity"]})
     out["labels"] = all_labels
+    if len(q) and layout:
+        out["time_prior"] = time_prior_comparison(tracklets, feats, pid, cams, q, layout)
     if len(q):
         out["details"] = query_details(tracklets, feats, pid, cams, q, labels)
     return out
+
+
+def _sim(feats):
+    f = np.asarray(feats, np.float64)
+    f = f / np.maximum(np.linalg.norm(f, axis=1, keepdims=True), 1e-12)
+    return np.einsum("id,jd->ij", f, f)
+
+
+def rank_metrics(sim, pid, cams, q):
+    """Cross-camera rank-1/5 and mAP from a similarity matrix (same-camera candidates skipped)."""
+    hits1 = hits5 = 0
+    aps = []
+    for i in q:
+        order = [j for j in np.argsort(-sim[i], kind="stable") if j != i and cams[j] != cams[i]]
+        match = np.array([pid[j] == pid[i] for j in order])
+        if not match.any():
+            continue
+        hits1 += bool(match[:1].any())
+        hits5 += bool(match[:5].any())
+        prec = np.cumsum(match) / (np.arange(len(match)) + 1)
+        aps.append(float((prec * match).sum() / match.sum()))
+    n = max(len(aps), 1)
+    return {"rank1": hits1 / n, "rank5": hits5 / n, "mAP": float(np.mean(aps)) if aps else float("nan")}
+
+
+def time_prior_comparison(tracklets, feats, pid, cams, q, layout, bonuses=(0.0, 0.05, 0.1, 0.2)):
+    """Same queries, ranked by similarity + bonus for plausible walking times (0.0 = plain appearance)."""
+    from . import time_prior
+
+    sim = _sim(feats)
+    return {str(b): rank_metrics(sim + time_prior.bonus_matrix(tracklets, layout, b), pid, cams, q) for b in bonuses}
 
 
 def query_details(tracklets, feats, pid, cams, q, labels):
@@ -93,7 +126,7 @@ def query_details(tracklets, feats, pid, cams, q, labels):
     feats = np.asarray(feats, float)
     rows = []
     for i in q:
-        sim = feats @ feats[i]
+        sim = _sim(feats)[i]
         order = [j for j in np.argsort(-sim) if j != i and cams[j] != cams[i]]
         correct = [r for r, j in enumerate(order, 1) if pid[j] == pid[i]]
         top = order[0] if order else None

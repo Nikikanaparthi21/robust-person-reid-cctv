@@ -23,6 +23,8 @@ p.add_argument("--run", required=True, help="output folder of run_video_pipeline
 p.add_argument("--truth", required=True)
 p.add_argument("--threshold", type=float, default=0.3)
 p.add_argument("--min-overlap", type=float, default=0.5)
+p.add_argument("--layout", default=None,
+               help='camera layout CSV, or "default" for walking times taken from your notes; adds a plain-vs-time-prior comparison')
 args = p.parse_args()
 
 run = Path(args.run)
@@ -37,7 +39,12 @@ feats = np.load(run / "tracklet_embeddings.npy")
 truth = [{"person": r["person"], "camera": r["camera"], "start": video_eval.parse_time(r["start"]),
           "end": video_eval.parse_time(r["end"])} for r in csv.DictReader(open(args.truth))
          if video_eval.parse_time(r["end"]) > video_eval.parse_time(r["start"])]   # zero-length rows cannot be scored
-res = video_eval.evaluate_video(tracklets, feats, truth, args.threshold, args.min_overlap)
+layout = None
+if args.layout:
+    from cctv_reid import time_prior
+    layout = time_prior.DEFAULT_LAYOUT if args.layout == "default" else time_prior.load_layout(args.layout)
+res = video_eval.evaluate_video(tracklets, feats, truth, args.threshold, args.min_overlap, layout)
+tp = res.pop("time_prior", None)
 labels = res.pop("labels")
 details = res.pop("details", [])
 for t, lab in zip(tracklets, labels):
@@ -46,11 +53,15 @@ for t, lab in zip(tracklets, labels):
 print()
 for k, v in res.items():
     print(f"{k:<20} {v:.3f}" if isinstance(v, float) else f"{k:<20} {v}")
+if tp:
+    print("\nwalking-time prior (bonus added to similarity when the gap fits the layout; 0.0 = appearance only):")
+    for b, m in tp.items():
+        print(f"  bonus {b:<5} rank1 {m['rank1']:.3f}  rank5 {m['rank5']:.3f}  mAP {m['mAP']:.3f}")
 if details:
     print("\nper-query cross-camera results (query -> first correct rank; wrong top-1 shown):")
     for d in details:
         ok = d["first_correct_rank"] == 1
         print(f"  {d['query']:<14} {d['person']:<8} first correct at rank {d['first_correct_rank']}"
               + ("" if ok else f"   top-1 was {d['top1']} ({d['top1_label']}, sim {d['top1_sim']})"))
-io_utils.save_json({**res, "details": details, "labels": dict(zip([t['id'] for t in tracklets], labels))}, run / "video_eval.json")
+io_utils.save_json({**res, "time_prior": tp, "details": details, "labels": dict(zip([t['id'] for t in tracklets], labels))}, run / "video_eval.json")
 print("saved", run / "video_eval.json")
