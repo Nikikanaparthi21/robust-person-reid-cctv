@@ -438,3 +438,13 @@ def test_video_segment_keeps_absolute_times(tmp_path):
     assert len(tl) == 1 and tl[0].tid == "S_s1_1"
     assert abs(tl[0].start_s - 2.0) < 1e-6 and abs(tl[0].end_s - 4.0) < 1e-6  # absolute video time, not segment time
     assert len(tl[0].frame_idx) == 21 and all(c.shape == (256, 128, 3) for c in tl[0].crops)
+
+
+def test_clock_reader_handles_blank_frame():
+    import numpy as np
+    from cctv_reid.clock_reader import read_clock, _templates
+
+    digits, feats = _templates()
+    assert list(digits) == list(range(10)) and feats.shape[0] == 10
+    assert read_clock(np.zeros((1080, 960, 3), np.uint8)) is None
+    assert read_clock(np.full((1080, 960, 3), 255, np.uint8)) is None
