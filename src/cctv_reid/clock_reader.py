@@ -29,14 +29,18 @@ TEMPLATES = Path(__file__).with_name("clock_templates.npz")
 def _feature(gray: np.ndarray, x0: float, x1: float) -> np.ndarray:
     """One character cell -> FEAT-sized image of the glyph's white strokes.
 
-    Each glyph is white with a solid black outline, so its white strokes form a
-    connected blob separate from any bright background.  Blobs touching the
+    Works at the frame's native resolution (no resizing, which blurs thin
+    strokes).  Each glyph is white with a solid black outline, so its white
+    strokes form a blob separate from bright background.  Blobs touching the
     crop edge (background) are dropped and the largest remaining blob is kept.
+    Geometry is corrected for squeezed frames (e.g. 960x1080 shown at 1.85:1).
     """
     h, w = gray.shape
-    xa, xb = int(round(x0 * w)) - 5, int(round(x1 * w)) + 5
+    sx, sy = w / REF_W, h / REF_H
+    pad = max(2, int(round(5 * sx)))
+    xa, xb = int(round(x0 * w)) - pad, int(round(x1 * w)) + pad
     ya, yb = int(Y0 * h), int(Y1 * h)
-    cell = gray[max(ya, 0):yb, max(xa, 0):xb] > 215
+    cell = gray[max(ya, 0):yb, max(xa, 0):xb] > 200
     fw, fh = FEAT
     out = np.zeros((fh, fw), np.float32)
     lab, n = ndimage.label(cell)
@@ -48,28 +52,22 @@ def _feature(gray: np.ndarray, x0: float, x1: float) -> np.ndarray:
             continue
         if len(ys) > best_area:
             best, best_area = i, len(ys)
-    if best_area < 25:
+    if best_area < 25 * sx * sy:
         return out
     ys, xs = np.where(lab == best)
     glyph = (lab[ys.min():ys.max() + 1, xs.min():xs.max() + 1] == best).astype(np.float32)
-    # scale by height (digits share one height), keep aspect so '1' stays narrow
-    scale = fh / glyph.shape[0]
-    gw = max(1, min(fw, int(round(glyph.shape[1] * scale))))
-    yi = np.minimum((np.arange(fh) / scale).astype(int), glyph.shape[0] - 1)
-    xi = np.minimum((np.arange(gw) / scale).astype(int), glyph.shape[1] - 1)
+    ref_h, ref_w = glyph.shape[0] / sy, glyph.shape[1] / sx   # size in calibration pixels
+    scale = fh / ref_h
+    gw = max(1, min(fw, int(round(ref_w * scale))))
+    yi = np.minimum((np.arange(fh) * glyph.shape[0] / fh).astype(int), glyph.shape[0] - 1)
+    xi = np.minimum((np.arange(gw) * glyph.shape[1] / gw).astype(int), glyph.shape[1] - 1)
     out[:, (fw - gw) // 2:(fw - gw) // 2 + gw] = glyph[np.ix_(yi, xi)]
     return out
 
 
 def _gray(frame: np.ndarray) -> np.ndarray:
-    """Grayscale, resized to the calibration geometry (frames may be squeezed, e.g. 960x1080)."""
     f = frame.astype(np.float32)
-    g = f.mean(2) if f.ndim == 3 else f
-    if g.shape[1] != int(REF_W) or g.shape[0] != int(REF_H):
-        from PIL import Image
-        g = np.asarray(Image.fromarray(g).resize((int(REF_W), int(REF_H)), Image.BILINEAR),
-                       dtype=np.float32)
-    return g
+    return f.mean(2) if f.ndim == 3 else f
 
 
 def cell_features(frame: np.ndarray, slots, x0: float, pitch: float = TIME_PITCH) -> list[np.ndarray]:
@@ -88,7 +86,7 @@ def _templates():
     return _T
 
 
-def read_clock(frame: np.ndarray, max_dist: float = 0.22):
+def read_clock(frame: np.ndarray, max_dist: float = 0.40, margin: float = 1.25):
     """Return seconds since midnight (AM assumed), or None if unreadable.
 
     The recording window is morning (06:00-10:00); 12-hour 'PM' is not handled.
@@ -100,7 +98,8 @@ def read_clock(frame: np.ndarray, max_dist: float = 0.22):
             return None
         d = np.sqrt(((feats - f) ** 2).mean((1, 2)))
         k = int(d.argmin())
-        if d[k] > max_dist:
+        second = float(np.sort(d)[1])
+        if d[k] > max_dist or second < margin * d[k]:   # poor or ambiguous match
             return None
         out.append(int(digits[k]))
     hh, mm, ss = out[0] * 10 + out[1], out[2] * 10 + out[3], out[4] * 10 + out[5]
