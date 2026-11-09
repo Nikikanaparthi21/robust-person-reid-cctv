@@ -57,10 +57,10 @@ let D=null,base="data/",state={q:0,cams:new Set(),minSim:0,reveal:false,tab:"fin
 const KEY="reid-review-v1";
 let reviews={};try{reviews=JSON.parse(localStorage.getItem(KEY)||"{}")}catch(e){}
 const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(reviews))}catch(e){}};
-const $=(t,a={},...k)=>{const e=document.createElement(t);for(const[x,v]of Object.entries(a)){if(x==="class")e.className=v;else if(x.startsWith("on"))e.addEventListener(x.slice(2),v);else if(v===true)e.setAttribute(x,"");else if(v!==false&&v!=null)e.setAttribute(x,v)}for(const c of k.flat())e.append(c&&c.nodeType?c:document.createTextNode(c??""));return e};
+const $=(t,a={},...k)=>{const e=document.createElement(t);for(const[x,v]of Object.entries(a)){if(x==="class")e.className=v;else if(x.startsWith("on"))e.addEventListener(x.slice(2),v);else if(x.startsWith("aria-")&&typeof v==="boolean")e.setAttribute(x,String(v));else if(v===true)e.setAttribute(x,"");else if(v!==false&&v!=null)e.setAttribute(x,v)}for(const c of k.flat())e.append(c&&c.nodeType?c:document.createTextNode(c??""));return e};
 function hue(s){let h=0;for(const ch of s)h=(h*31+ch.charCodeAt(0))%360;return h}
 function thumb(name,key,size=""){
-  const ph=()=>{const w=$("span",{class:"thumb ph "+size,"aria-hidden":"true"});const hh=hue(key);
+  const ph=()=>{const w=$("span",{class:"thumb ph "+size,"aria-hidden":"true"});const pid=parseInt(String(key).split("_")[0],10);const hh=Number.isFinite(pid)?Math.round(pid*137.508)%360:hue(String(key));
     w.innerHTML=`<svg viewBox="0 0 24 48" width="70%" height="92%"><circle cx="12" cy="9" r="6" fill="hsl(${hh} 35% 55%)"/><rect x="5" y="17" width="14" height="20" rx="5" fill="hsl(${hh} 40% 45%)"/><rect x="6" y="36" width="5" height="12" fill="hsl(${hh} 30% 35%)"/><rect x="13" y="36" width="5" height="12" fill="hsl(${hh} 30% 35%)"/></svg>`;return w};
   if(!name||(D&&D.meta.synthetic))return ph();
   const img=$("img",{class:"thumb "+size,src:base+"thumbs/"+name,alt:"frame from tracklet "+key,loading:"lazy"});
