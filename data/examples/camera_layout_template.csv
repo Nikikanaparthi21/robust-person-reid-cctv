@@ -1,0 +1,7 @@
+from_camera,to_camera,min_seconds,max_seconds,notes
+CAM 2,CAM 1,8,20,"from your notes: about 13 s (white shirt, 08:19:02-08:19:15). EDIT the range"
+CAM 1,CAM 2,,,"walk time the other way: fill in (min and max seconds)"
+CAM 1,CAM 3,3,12,"from your notes: about 6 s. EDIT the range"
+CAM 3,CAM 1,,,"fill in"
+CAM 2,CAM 3,12,30,"from your notes: about 19 s, going via CAM 1. Is there a direct path? If not, delete this row"
+CAM 3,CAM 2,,,"fill in or delete"
