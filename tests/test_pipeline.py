@@ -304,6 +304,30 @@ def test_pk_batches_shape_and_small_identity_handling():
         list(pk_batches(labels, p=5, k=2, n_batches=1))
 
 
+# ---------- review viewer data ----------
+def test_demo_data_structure_and_no_invented_times():
+    from cctv_reid import demo_data
+
+    cfg = synthetic.SynthConfig(n_ids=15, n_cams=3, tracklets_per_cam=1, min_frames=5, max_frames=6)
+    ds = synthetic.make_dataset(cfg, np.random.default_rng(3))
+    names, counter = [], {}
+    for pid, cam in zip(ds["ids"], ds["cams"]):
+        counter[(pid, cam)] = counter.get((pid, cam), 0) + 1
+        names.append(f"{pid + 1:04d}C{cam + 1}T0001F{counter[(pid, cam)]:03d}.jpg")
+    out = demo_data.build(ds["frames"], names, n_queries=4, top_k=5, threshold=0.5)
+    assert out["meta"]["has_time"] is False and out["meta"]["disclaimer"]
+    assert len(out["queries"]) == 4
+    for q in out["queries"]:
+        sims = [r["similarity"] for r in q["results"]]
+        assert sims == sorted(sims, reverse=True) and len(q["results"]) <= 5
+        assert all(r["time_s"] is None and r["key"] != q["key"] for r in q["results"])
+        assert all(r["truth"] in ("same", "different", "distractor") for r in q["results"])
+        assert len(q["thumbs"]) >= 1
+    assert all(len(c["cameras"]) >= 2 for c in out["clusters"])
+    key = out["queries"][0]["key"]
+    timed = demo_data.build(ds["frames"], names, n_queries=1, top_k=3, times={key: 12.5})
+    assert timed["meta"]["has_time"] is True
+
 # ---------- robustness helpers (torch-free) ----------
 def test_robustness_conditions_and_quality():
     from cctv_reid import robustness
