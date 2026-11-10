@@ -9,6 +9,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
+import time
+
 import numpy as np
 
 from . import embeddings
@@ -211,7 +213,8 @@ def window_from_index(index, clock_start: float, clock_end: float, pad_s: float 
 def process_video(path: str, camera: str, detector, every_n: int | None = None, target_fps: float = 5.0,
                   det_score: float = 0.5, min_box_height: int = 60, min_hits: int = 5, max_missed: int = 15,
                   max_crops: int = 16, batch: int = 8, start_s: float = 0.0, end_s: float | None = None,
-                  id_prefix: str = "", read_clock: bool = False, clock_fn=None) -> list[VideoTracklet]:
+                  id_prefix: str = "", read_clock: bool = False, clock_fn=None,
+                  progress_every_s: float = 600.0) -> list[VideoTracklet]:
     """Detect persons in sampled frames, track them, and keep up to `max_crops` evenly spaced crops per tracklet.
 
     read_clock=True reads the burned-in clock from every sampled frame (for motion-triggered recordings whose video
@@ -223,6 +226,7 @@ def process_video(path: str, camera: str, detector, every_n: int | None = None, 
     clip_of, clock_of = {}, {}
     meta, frames_dets = [], []
     pending: list[tuple[int, float, np.ndarray]] = []
+    last_report, t_start = [start_s], time.time()
 
     def flush():
         if not pending:
@@ -237,6 +241,10 @@ def process_video(path: str, camera: str, detector, every_n: int | None = None, 
             dets = from_array(fi, boxes[ok], scores[ok]) if len(boxes) else []
             frames_dets.append(dets)
             meta.append((fi, t))
+            if progress_every_s and t - last_report[0] >= progress_every_s:
+                last_report[0] = t
+                print(f"    [{camera}] detected up to {t / 60:.0f} min of video "
+                      f"({time.time() - t_start:.0f} s elapsed)", flush=True)
         pending.clear()
 
     # Pass 1: detect + track (no frames are kept in memory). Pass 2 re-reads the video for the few crops needed.

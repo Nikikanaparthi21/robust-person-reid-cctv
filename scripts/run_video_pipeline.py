@@ -117,6 +117,18 @@ for cam_idx, spec in enumerate(args.video, 1):
     else:
         segments = [(video_eval.parse_time(a), video_eval.parse_time(b)) for a, b in (args.segment or [(0, None)])]
     segments = [(a, None if b in (None, 0) else b) for a, b in segments]
+    # Save point per camera: a long run that stops partway resumes from the finished cameras.
+    import hashlib
+    import pickle
+    key = hashlib.sha1(repr((Path(path).stat().st_size, int(Path(path).stat().st_mtime), segments, args.fps, args.det_score,
+                             args.min_box_height, args.min_hits, args.max_missed, args.detector, args.read_clock)).encode()).hexdigest()[:12]
+    cache = out / f"tracklets_cache_{cam_idx}_{key}.pkl"
+    if cache.exists():
+        cam_tracklets = pickle.loads(cache.read_bytes())
+        print(f"[{name}] reusing saved result: {len(cam_tracklets)} tracklets ({cache.name})", flush=True)
+        all_tracklets += cam_tracklets
+        continue
+    cam_tracklets = []
     for k, (a, b) in enumerate(segments, 1):
         if args.segment or args.clock_segment:
             print(f"[{name}] segment {k}: {vp.format_clock(a)} - {vp.format_clock(b) if b else 'end'}", flush=True)
@@ -125,7 +137,9 @@ for cam_idx, spec in enumerate(args.video, 1):
                                start_s=a, end_s=b, read_clock=args.read_clock,
                                id_prefix=f"s{k}_" if (args.segment or args.clock_segment) else "")
         print(f"[{name}] {len(tls)} tracklets", flush=True)
-        all_tracklets += tls
+        cam_tracklets += tls
+    cache.write_bytes(pickle.dumps(cam_tracklets))
+    all_tracklets += cam_tracklets
 if not all_tracklets:
     sys.exit("no tracklets found: lower --det-score / --min-hits, or check the video")
 
