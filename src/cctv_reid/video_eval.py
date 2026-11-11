@@ -87,6 +87,32 @@ def evaluate_video(tracklets: list[dict], feats: np.ndarray, truth: list[dict], 
     return out
 
 
+def coverage(tracklets: list[dict], truth: list[dict], min_overlap: float = 0.3):
+    """How many logged appearances did the pipeline find at all?
+
+    A log row counts as found if some tracklet on the same camera lies mostly (>= min_overlap of the tracklet's own
+    duration) inside it - the same rule used to label tracklets.  Returns (rows, summary-by-duration).
+    """
+    out = []
+    for r in truth:
+        found = False
+        for t in tracklets:
+            if t["camera"] != r["camera"]:
+                continue
+            dur = max(t["end"] - t["start"], 1e-6)
+            inter = min(t["end"], r["end"]) - max(t["start"], r["start"])
+            if inter > 0 and inter / dur >= min_overlap:
+                found = True
+                break
+        out.append({**r, "found": found, "dur": r["end"] - r["start"]})
+    buckets = {"< 10 s": (0, 10), "10-60 s": (10, 60), "> 60 s": (60, 1e18)}
+    summary = {}
+    for name, (lo, hi) in buckets.items():
+        rows = [o for o in out if lo <= o["dur"] < hi]
+        summary[name] = (sum(o["found"] for o in rows), len(rows))
+    return out, summary
+
+
 def _sim(feats):
     f = np.asarray(feats, np.float64)
     f = f / np.maximum(np.linalg.norm(f, axis=1, keepdims=True), 1e-12)

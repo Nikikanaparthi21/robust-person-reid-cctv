@@ -559,3 +559,15 @@ def test_time_prior_bonus_and_comparison():
     res = video_eval.evaluate_video(tr, feats, truth, layout=layout)
     # two queries (a and b); only a's ranking is fooled by the lookalike stranger c, and the bonus repairs it
     assert res["time_prior"]["0.0"]["rank1"] == 0.5 and res["time_prior"]["0.2"]["rank1"] == 1.0
+
+
+def test_coverage_counts_logged_appearances_found():
+    from cctv_reid import video_eval
+
+    truth = [{"person": "A", "camera": "X", "start": 0, "end": 100},     # long, found
+             {"person": "B", "camera": "X", "start": 200, "end": 205},   # short, missed
+             {"person": "C", "camera": "Y", "start": 0, "end": 30}]      # found only on the wrong camera -> missed
+    tr = [{"id": "t1", "camera": "X", "start": 10, "end": 40}, {"id": "t2", "camera": "X", "start": 500, "end": 520}]
+    rows, summ = video_eval.coverage(tr, truth)
+    assert [r["found"] for r in rows] == [True, False, False]
+    assert summ["< 10 s"] == (0, 1) and summ["10-60 s"] == (0, 1) and summ["> 60 s"] == (1, 1)

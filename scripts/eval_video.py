@@ -63,5 +63,22 @@ if details:
         ok = d["first_correct_rank"] == 1
         print(f"  {d['query']:<14} {d['person']:<8} first correct at rank {d['first_correct_rank']}"
               + ("" if ok else f"   top-1 was {d['top1']} ({d['top1_label']}, sim {d['top1_sim']})"))
+from datetime import datetime
+
+unl = [(t, lab) for t, lab in zip(tracklets, labels) if lab is None]
+if unl:
+    print(f"\n{len(unl)} unlabeled tracklets (no logged person overlaps them). If one is really a person who is missing from your log,")
+    print("it counts as a wrong match above. Worth a look in the viewer:")
+    for t, _ in unl:
+        print(f"  {t['id']:<12} {t['camera']}  {datetime.fromtimestamp(t['start']):%H:%M:%S} - {datetime.fromtimestamp(t['end']):%H:%M:%S}")
+rows_cov, summ = video_eval.coverage(tracklets, truth, args.min_overlap)
+print("\nlogged appearances found by the pipeline (a tracklet on that camera lying inside the logged interval):")
+for name, (f, n) in summ.items():
+    print(f"  {name:<8} {f}/{n}" + (f"  ({100 * f / n:.0f}%)" if n else ""))
+missed = [o for o in rows_cov if not o["found"] and o["dur"] >= 10]
+if missed:
+    print(f"  missed appearances of 10 s or longer ({len(missed)}):")
+    for o in sorted(missed, key=lambda o: o["start"])[:25]:
+        print(f"    {o['person']:<10} {o['camera']}  {datetime.fromtimestamp(o['start']):%H:%M:%S} - {datetime.fromtimestamp(o['end']):%H:%M:%S}  ({o['dur']:.0f} s)")
 io_utils.save_json({**res, "time_prior": tp, "details": details, "labels": dict(zip([t['id'] for t in tracklets], labels))}, run / "video_eval.json")
 print("saved", run / "video_eval.json")
