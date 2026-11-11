@@ -115,7 +115,8 @@ for cam_idx, spec in enumerate(args.video, 1):
             sys.exit("--clock-segment needs --read-clock")
         segments = video_clock_segments(path, args.clock_segment, name)
     else:
-        segments = [(video_eval.parse_time(a), video_eval.parse_time(b)) for a, b in (args.segment or [(0, None)])]
+        segments = [(video_eval.parse_time(a), None if b is None else video_eval.parse_time(b))   # no --segment = whole file
+                    for a, b in (args.segment or [(0, None)])]
     segments = [(a, None if b in (None, 0) else b) for a, b in segments]
     # Save point per camera: a long run that stops partway resumes from the finished cameras.
     import hashlib
